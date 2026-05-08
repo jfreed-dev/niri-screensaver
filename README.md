@@ -20,7 +20,7 @@ bin/
   niri-screensaver-ctl     Thin shim: launch | kill | toggle | status | test | effects.
 share/
   alacritty-screensaver.toml  Minimal Alacritty config (black bg, no padding, hidden cursor).
-  logos/                       Framework ASCII art (icon, wordmark, combined).
+  logos/                       ASCII art logos (Framework cog, CachyOS shield, combos). See `Logos` below.
 docs/
   niri-window-rule.kdl         Snippet for ~/.config/niri/config.kdl.
   noctalia-customCommand.json  Snippet for ~/.config/noctalia/settings.json idle.customCommands.
@@ -131,6 +131,35 @@ niri-screensaver-ctl effects   # list all TTE effects
 
 The mouse pointer is left to niri — set `cursor { hide-after-inactive-ms }` in
 your niri config to auto-hide it during the screensaver.
+
+## Logos
+
+`share/logos/` ships ready-to-use ASCII art. Point `LOGO_FILE` at one of them
+in `~/.config/niri-screensaver/config` (or via the Noctalia plugin's Settings
+panel) — or symlink your favorite to the active path:
+
+```bash
+ln -sf ~/.local/share/niri-screensaver/logos/framework-name-with-gear.txt \
+       ~/.config/niri-screensaver/logo.txt
+```
+
+| File | Contents |
+|------|----------|
+| `framework-icon.txt` | Real Framework 8-lobed cog logo (40×18, ASCII-ized from the official SVG) |
+| `framework-gear.txt` | Same cog, medium (30×14) |
+| `framework-hex.txt` | Same cog, compact (24×10) |
+| `framework-name.txt` | `FRAMEWORK` ANSI Shadow wordmark |
+| `framework-name-with-icon.txt` | Cog (40×18) + wordmark |
+| `framework-name-with-gear.txt` | Cog (30×14) + wordmark |
+| `framework-name-with-hex.txt` | Cog (24×10) + wordmark |
+| `framework-name-with-cachyos-icon.txt` | CachyOS shield + `FRAMEWORK` wordmark (for CachyOS-on-Framework setups) |
+| `cachyos-icon.txt` | CachyOS shield (lifted from fastfetch's CachyOS logo) |
+| `cachyos-name.txt` | `CACHYOS` ANSI Shadow wordmark |
+| `cachyos-name-with-icon.txt` | Shield + `CACHYOS` wordmark |
+
+Adding your own: drop any UTF-8 text file into `~/.local/share/niri-screensaver/logos/`
+(or `share/logos/` in the repo) and point `LOGO_FILE` at it. TTE renders any
+text content; block characters (`█`) and ANSI Shadow letters look best.
 
 ## What was dropped from cosmic-order
 
