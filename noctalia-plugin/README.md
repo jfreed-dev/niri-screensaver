@@ -58,6 +58,34 @@ ln -s ~/Repos/niri-screensaver/noctalia-plugin ~/.config/noctalia/plugins/niri-s
 
 Then restart Noctalia: `pkill qs && qs -c noctalia-shell &`
 
+## Settings
+
+Each toggle / field in the plugin's Settings tab maps to a key in the
+shell-format `~/.config/niri-screensaver/config` that the script driver
+reads. Changing a value writes the file immediately (via the QML
+`pluginSettingsChanged` signal) — no plugin reload needed.
+
+| UI label | shell key | default | notes |
+|----------|-----------|---------|-------|
+| Enabled | (registers an entry in `Settings.data.idle.customCommands`) | `true` | Toggling off removes the entry |
+| Idle threshold (seconds) | sets the `timeout` of that customCommand | `300` | |
+| Include effects (CSV) | `INCLUDE_EFFECTS` | _empty_ | Comma-separated effect names |
+| Exclude effects (CSV) | `EXCLUDE_EFFECTS` | `dev_worm` | Skipped if Include is non-empty |
+| Fade-in effect | `FADE_IN_EFFECT` | _empty_ | One-shot effect on launch |
+| Fade-out effect | `FADE_OUT_EFFECT` | _empty_ | One-shot effect on dismiss |
+| Random logo per cycle | `RANDOM_LOGO` | `false` | Re-rolls the logo each effect cycle |
+| Logo directory (optional) | `LOGO_DIR` | _empty_ | Where the random picker scans; defaults to installed `share/logos/` |
+| Show clock between effects | `SHOW_CLOCK` | `false` | |
+| Clock format (strftime) | `CLOCK_FORMAT` | `%H:%M` | |
+| Trigger now | (runs `launcherCommand`) | `niri-screensaver-launch launch` | |
+| Stop | (runs `killCommand`) | `niri-screensaver-launch kill` | |
+
+The full list of keys (including those without a UI surface like
+`CURSOR_HIDE`, `DISMISS_ON_KEY`, `FRAME_RATE`, `CLOCK_DURATION`,
+`CLOCK_FONT`) is in the main repo README's Configuration table. Editing
+`~/.config/niri-screensaver/config` directly works too — values come back
+into the plugin UI on next plugin load.
+
 ## Files
 
 ```
@@ -65,7 +93,8 @@ manifest.json   Plugin metadata + defaultSettings.
 Main.qml        Persistence + idle wiring + IPC handlers.
 Settings.qml    Configuration UI rendered in Noctalia Settings.
 BarWidget.qml   Status-bar capsule with click + context menu.
-i18n/en.json    English strings.
+i18n/en.json    English strings (nested objects, not flat dotted keys —
+                Noctalia's tr() walks nested properties).
 ```
 
 ## Hacking
