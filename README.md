@@ -151,19 +151,19 @@ in `~/.config/niri-screensaver/config` (or via the Noctalia plugin's Settings
 panel) — or symlink your favorite to the active path:
 
 ```bash
-ln -sf ~/.local/share/niri-screensaver/logos/framework-name-with-gear.txt \
+ln -sf ~/.local/share/niri-screensaver/logos/framework-name-with-icon-medium.txt \
        ~/.config/niri-screensaver/logo.txt
 ```
 
 | File | Contents |
 |------|----------|
 | `framework-icon.txt` | Real Framework 8-lobed cog logo (40×18, ASCII-ized from the official SVG) |
-| `framework-gear.txt` | Same cog, medium (30×14) |
-| `framework-hex.txt` | Same cog, compact (24×10) |
+| `framework-icon-medium.txt` | Same cog, medium (30×14) |
+| `framework-icon-small.txt` | Same cog, compact (24×10) |
 | `framework-name.txt` | `FRAMEWORK` ANSI Shadow wordmark |
 | `framework-name-with-icon.txt` | Cog (40×18) + wordmark |
-| `framework-name-with-gear.txt` | Cog (30×14) + wordmark |
-| `framework-name-with-hex.txt` | Cog (24×10) + wordmark |
+| `framework-name-with-icon-medium.txt` | Cog (30×14) + wordmark |
+| `framework-name-with-icon-small.txt` | Cog (24×10) + wordmark |
 | `framework-name-with-cachyos-icon.txt` | CachyOS shield + `FRAMEWORK` wordmark (for CachyOS-on-Framework setups) |
 | `cachyos-icon.txt` | CachyOS shield (lifted from fastfetch's CachyOS logo) |
 | `cachyos-name.txt` | `CACHYOS` ANSI Shadow wordmark |

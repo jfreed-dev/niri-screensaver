@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Niri logo set: real brand mark ASCII-ized from the official SVG (looks
+  like a stylized "i" or, depending on how you read it, an owl), `NIRI`
+  ANSI Shadow wordmark, scrolling-tiles representation of niri's
+  signature layout, plus combined variants. Niri logo files are
+  CC BY-SA 4.0 (carried over from upstream).
+- Hyprland logo set: official teardrop ASCII-ized from
+  `hyprwm/Hyprland/assets/hyprland.png`, `HYPRLAND` ANSI Shadow
+  wordmark, and combined variant.
+
+### Changed
+- **Breaking:** logo file renames so the names match the actual content
+  (all three are the same 8-lobed Framework cog at different sizes):
+  `framework-gear.txt` → `framework-icon-medium.txt`,
+  `framework-hex.txt` → `framework-icon-small.txt`,
+  `framework-name-with-gear.txt` → `framework-name-with-icon-medium.txt`,
+  `framework-name-with-hex.txt` → `framework-name-with-icon-small.txt`.
+  If you had `LOGO_FILE` pointing at one of the old names, update it.
+- All `framework-name-with-*.txt` files now end with the same single
+  trailing blank line as every other logo file (cosmetic uniformity).
+
 ## [0.2.0] - 2026-05-08
 
 ### Added
