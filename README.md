@@ -5,10 +5,11 @@ A terminal-based screensaver for [Niri](https://github.com/YaLTeR/niri), driven 
 designed to integrate with the [Noctalia](https://github.com/noctalia-dev/noctalia-shell)
 desktop shell.
 
-![CACHYOS wordmark mid-effect](docs/screensaver.png)
+![Screensaver demo](docs/screensaver.gif)
 
-> Mid-effect frame on CachyOS — `RANDOM_LOGO=true` cycled to the
-> `cachyos-name.txt` logo, rendered with one of TTE's decode/decrypt effects.
+> 8-second loop on CachyOS — `RANDOM_LOGO=true` happens to land on the Framework
+> hex cog and one of TTE's color-gradient effects. (The visible cursor at the
+> bottom is a known issue tracked in [`TODO.md`](TODO.md).)
 
 Forked from [cosmic-order](https://github.com/jonfreed/cosmic-order)'s screensaver
 component, with the COSMIC-specific glue (cosmic-randr, cosmic-greeter, the
