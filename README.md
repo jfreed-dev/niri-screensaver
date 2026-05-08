@@ -168,6 +168,14 @@ ln -sf ~/.local/share/niri-screensaver/logos/framework-name-with-gear.txt \
 | `cachyos-icon.txt` | CachyOS shield (lifted from fastfetch's CachyOS logo) |
 | `cachyos-name.txt` | `CACHYOS` ANSI Shadow wordmark |
 | `cachyos-name-with-icon.txt` | Shield + `CACHYOS` wordmark |
+| `niri-icon.txt` | Real niri brand icon (stylized "i" / arguably owl-shaped, ASCII-ized from the official SVG, [CC BY-SA](https://creativecommons.org/licenses/by-sa/4.0/)) |
+| `niri-name.txt` | `NIRI` ANSI Shadow wordmark |
+| `niri-name-with-icon.txt` | Real niri icon + `NIRI` wordmark |
+| `niri-tiles.txt` | Five scrolling-tile columns of varying widths — niri's signature layout |
+| `niri-name-with-tiles.txt` | Tiles + `NIRI` wordmark |
+| `hyprland-icon.txt` | Real Hyprland teardrop icon, ASCII-ized from `hyprwm/Hyprland/assets/hyprland.png` |
+| `hyprland-name.txt` | `HYPRLAND` ANSI Shadow wordmark |
+| `hyprland-name-with-icon.txt` | Teardrop + `HYPRLAND` wordmark |
 
 Adding your own: drop any UTF-8 text file into `~/.local/share/niri-screensaver/logos/`
 (or `share/logos/` in the repo) and point `LOGO_FILE` at it. TTE renders any
