@@ -36,13 +36,13 @@ Item {
     }
   }
 
-  // Re-sync whenever any plugin setting changes
+  // Re-sync whenever settings are saved. saveSettings() in the plugin API
+  // reassigns pluginSettings (Object.assign copy) precisely so QML bindings
+  // re-evaluate; the resulting pluginSettingsChanged signal is our hook.
   Connections {
-    target: pluginApi ? pluginApi.pluginSettings : null
+    target: pluginApi
     enabled: pluginApi !== null
-    function onAnyChanged() { root._syncAll() }
-    function onEnabledChanged() { root._syncAll() }
-    function onIdleSecondsChanged() { root._syncAll() }
+    function onPluginSettingsChanged() { root._syncAll() }
   }
 
   function _syncAll() {
