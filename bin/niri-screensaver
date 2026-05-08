@@ -35,6 +35,8 @@ CLOCK_FORMAT="${CLOCK_FORMAT:-%H:%M}"
 CLOCK_FONT="${CLOCK_FONT:-}"
 CURSOR_HIDE="${CURSOR_HIDE:-true}"
 DISMISS_ON_KEY="${DISMISS_ON_KEY:-true}"
+RANDOM_LOGO="${RANDOM_LOGO:-false}"
+LOGO_DIR="${LOGO_DIR:-}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -65,6 +67,8 @@ load_config() {
     : "${CLOCK_FORMAT:=%H:%M}"
     : "${CURSOR_HIDE:=true}"
     : "${DISMISS_ON_KEY:=true}"
+    : "${RANDOM_LOGO:=false}"
+    # LOGO_DIR is left empty by default; resolve_logo_dir() figures it out lazily.
 }
 
 resolve_default_logo() {
@@ -202,6 +206,39 @@ display_clock() {
     sleep "$duration"
 }
 
+# Resolve the directory we'll pick random logos from. Order:
+#   1. $LOGO_DIR if explicitly set and exists.
+#   2. The first DEFAULT_LOGO_CANDIDATES dir (system data, user data, dev checkout).
+#   3. Directory of $LOGO_FILE.
+resolve_logo_dir() {
+    if [[ -n "${LOGO_DIR:-}" && -d "$LOGO_DIR" ]]; then
+        echo "$LOGO_DIR"; return 0
+    fi
+    for cand in \
+        "${NIRI_SCREENSAVER_DATA:-/usr/share/niri-screensaver}/logos" \
+        "$HOME/.local/share/niri-screensaver/logos" \
+        "${SCRIPT_DIR}/../share/logos"; do
+        if [[ -d "$cand" ]]; then echo "$cand"; return 0; fi
+    done
+    if [[ -n "${LOGO_FILE:-}" ]]; then
+        local dir
+        dir="$(dirname "$LOGO_FILE")"
+        [[ -d "$dir" ]] && echo "$dir" && return 0
+    fi
+    return 1
+}
+
+# Print a random *.txt path from the resolved logo dir, or empty string.
+pick_random_logo() {
+    local dir
+    dir="$(resolve_logo_dir)" || return 1
+    local files=()
+    while IFS= read -r -d '' f; do files+=("$f"); done \
+        < <(find "$dir" -maxdepth 1 -type f -name '*.txt' -print0 2>/dev/null)
+    [[ ${#files[@]} -eq 0 ]] && return 1
+    echo "${files[RANDOM % ${#files[@]}]}"
+}
+
 run_screensaver() {
     local logo_file="${1:-$LOGO_FILE}"
     if [[ ! -f "$logo_file" ]]; then
@@ -219,6 +256,14 @@ run_screensaver() {
     effect_args=$(build_effect_args)
 
     while true; do
+        # Re-roll the logo per effect cycle when RANDOM_LOGO is on. Falls back
+        # silently to the configured logo_file if the directory has no .txt files.
+        if [[ "$RANDOM_LOGO" == "true" ]]; then
+            local picked
+            picked="$(pick_random_logo)" && [[ -f "$picked" ]] && logo_file="$picked"
+            CURRENT_LOGO_FILE="$logo_file"
+        fi
+
         display_clock
 
         clear

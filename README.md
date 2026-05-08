@@ -128,6 +128,8 @@ niri-screensaver-ctl effects   # list all TTE effects
 | `CLOCK_FONT` | _empty_ | figlet font name |
 | `CURSOR_HIDE` | `true` | Hide the *text* cursor (`tput civis`) |
 | `DISMISS_ON_KEY` | `true` | Any key dismisses; ESC and mouse always dismiss |
+| `RANDOM_LOGO` | `false` | When `true`, pick a random `*.txt` from `LOGO_DIR` before each effect cycle |
+| `LOGO_DIR` | _empty_ | Directory the random picker scans. Defaults to the installed `share/logos/` |
 
 The mouse pointer is left to niri — set `cursor { hide-after-inactive-ms }` in
 your niri config to auto-hide it during the screensaver.

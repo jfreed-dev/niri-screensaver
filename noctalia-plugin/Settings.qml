@@ -192,6 +192,53 @@ Item {
       }
     }
 
+    // ----- Logo -----
+    NBox {
+      Layout.fillWidth: true
+      Layout.preferredHeight: logoCol.implicitHeight + Style.marginM * 2
+      color: Color.mSurfaceVariant
+
+      ColumnLayout {
+        id: logoCol
+        anchors.fill: parent
+        anchors.margins: Style.marginM
+        spacing: Style.marginS
+
+        NText {
+          text: rootItem.tr("settings.logo-section")
+          pointSize: Style.fontSizeL
+          font.weight: Style.fontWeightBold
+          color: Color.mOnSurface
+        }
+
+        RowLayout {
+          spacing: Style.marginM
+          NText { text: rootItem.tr("settings.random-logo"); Layout.preferredWidth: 200 }
+          NToggle {
+            checked: rootItem.cfg.randomLogo === true
+            onToggled: {
+              rootItem.cfg.randomLogo = checked
+              rootItem.pluginApi.saveSettings()
+            }
+          }
+        }
+
+        RowLayout {
+          spacing: Style.marginM
+          NText { text: rootItem.tr("settings.logo-dir"); Layout.preferredWidth: 200 }
+          TextField {
+            Layout.fillWidth: true
+            text: rootItem.cfg.logoDir || ""
+            placeholderText: "~/.local/share/niri-screensaver/logos"
+            onEditingFinished: {
+              rootItem.cfg.logoDir = text
+              rootItem.pluginApi.saveSettings()
+            }
+          }
+        }
+      }
+    }
+
     // ----- Clock -----
     NBox {
       Layout.fillWidth: true

@@ -32,6 +32,8 @@
       "logoPath": "",
       "cursorHide": true,
       "dismissOnKey": true,
+      "randomLogo": false,
+      "logoDir": "",
       "launcherCommand": "niri-screensaver-launch launch",
       "killCommand": "niri-screensaver-launch kill"
     }

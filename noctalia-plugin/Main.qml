@@ -74,6 +74,8 @@ Item {
       "LOGO_FILE=\"" + _shEscape(s.logoPath) + "\"",
       "CURSOR_HIDE=\"" + bool(s.cursorHide) + "\"",
       "DISMISS_ON_KEY=\"" + bool(s.dismissOnKey) + "\"",
+      "RANDOM_LOGO=\"" + bool(s.randomLogo) + "\"",
+      "LOGO_DIR=\"" + _shEscape(s.logoDir) + "\"",
       ""
     ].join("\n")
   }

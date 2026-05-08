@@ -13,6 +13,10 @@
     "fade-in": "Fade-in effect",
     "fade-out": "Fade-out effect",
 
+    "logo-section": "Logo",
+    "random-logo": "Random logo per cycle",
+    "logo-dir": "Logo directory (optional)",
+
     "clock-section": "Clock",
     "show-clock": "Show clock between effects",
     "clock-format": "Clock format (strftime)",
