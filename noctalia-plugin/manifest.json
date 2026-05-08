@@ -6,8 +6,8 @@
   "author": "jfreed-dev",
   "license": "GPL-3.0-only",
   "repository": "https://github.com/jfreed-dev/niri-screensaver",
-  "description": "Configuration UI and idle wiring for niri-screensaver. Manages ~/.config/niri-screensaver/config and auto-registers a screensaver entry in Noctalia's IdleService customCommands. Bar widget triggers the screensaver on demand.",
-  "tags": ["Bar", "System", "Niri", "Screensaver"],
+  "description": "Idle-aware terminal screensaver for Niri, driven by TerminalTextEffects.",
+  "tags": ["Bar", "System", "Niri"],
   "entryPoints": {
     "main": "Main.qml",
     "barWidget": "BarWidget.qml",
