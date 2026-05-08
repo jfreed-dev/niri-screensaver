@@ -1,5 +1,9 @@
 # niri-screensaver
 
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/jfreed-dev/niri-screensaver)](https://github.com/jfreed-dev/niri-screensaver/releases)
+[![CI](https://github.com/jfreed-dev/niri-screensaver/actions/workflows/ci.yml/badge.svg)](https://github.com/jfreed-dev/niri-screensaver/actions/workflows/ci.yml)
+
 A terminal-based screensaver for [Niri](https://github.com/YaLTeR/niri), driven by
 [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects) and
 designed to integrate with the [Noctalia](https://github.com/noctalia-dev/noctalia-shell)

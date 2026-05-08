@@ -65,7 +65,20 @@ with `[bug]` are confirmed defects.
 
 ## Ops / packaging
 
-- Tag `v0.2.0` release on GitHub (`gh release create v0.2.0`).
+- ~~Tag `v0.2.0` release on GitHub~~ — done.
+- ~~Add a screenshot or GIF demo to the README~~ — done (`docs/screensaver.gif`).
 - AUR package once the API stabilizes (depends on
   `python-terminaltexteffects`, `alacritty`, `niri`).
-- Add a screenshot or GIF demo to the README.
+
+## Notes for maintainers
+
+- **Capturing demos for docs:** the niri window-rule for
+  `app-id="niri-screensaver"` includes `block-out-from "screencast"`,
+  which causes `grim` / `wf-recorder` / `niri msg action screenshot-screen`
+  to record black frames where the screensaver should be. Workflow:
+  1. Comment out the `block-out-from "screencast"` line in
+     `~/.config/niri/cfg/rules.kdl` (or the equivalent in your niri config).
+  2. `niri validate` — niri picks up rule changes live.
+  3. Trigger the screensaver, capture, stop.
+  4. Restore the line and re-validate. Don't ship a recording dance
+     that leaves the rule disabled.

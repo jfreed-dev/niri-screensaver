@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck (bash scripts)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: shellcheck -x bin/niri-screensaver bin/niri-screensaver-launch bin/niri-screensaver-ctl install.sh
+
+  json-validate:
+    name: json validate (manifest, i18n)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON files
+        run: |
+          for f in $(find . -name '*.json' -not -path './.git/*'); do
+            python3 -c "import json,sys; json.load(open('$f'))" || { echo "invalid: $f"; exit 1; }
+          done
+
+  markdown-links:
+    name: markdown lint (basic)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for broken relative links in README
+        run: |
+          # Bail if README references files that don't exist in-tree
+          missing=0
+          while IFS= read -r path; do
+            [[ -e "$path" ]] || { echo "missing: $path"; missing=1; }
+          done < <(grep -oP '(?<=\]\()(?!http)[^)#]+' README.md | sort -u)
+          exit $missing
