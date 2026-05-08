@@ -38,9 +38,9 @@ NIconButton {
   NPopupContextMenu {
     id: contextMenu
     model: [
-      { "label": pluginApi?.tr("barwidget.trigger"),  "action": "trigger",  "icon": "play_arrow" },
+      { "label": pluginApi?.tr("barwidget.trigger"),  "action": "trigger",  "icon": "player-play" },
       { "label": pluginApi?.tr("barwidget.stop"),     "action": "stop",     "icon": "stop" },
-      { "label": pluginApi?.tr("barwidget.toggle"),   "action": "toggle",   "icon": "power_settings_new" },
+      { "label": pluginApi?.tr("barwidget.toggle"),   "action": "toggle",   "icon": "power" },
       { "label": pluginApi?.tr("barwidget.settings"), "action": "settings", "icon": "settings" }
     ]
     onTriggered: action => {
