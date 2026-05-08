@@ -1,0 +1,21 @@
+{
+  "_comment": "Wire the screensaver into Noctalia's IdleService. Open ~/.config/noctalia/settings.json, find the 'idle' object, and merge these fields. The customCommands array already exists (default '[]'); add an entry like the one below.",
+
+  "idle": {
+    "enabled": true,
+
+    "_screensaver_threshold_seconds": 300,
+    "_screensaver_command": "niri-screensaver-launch launch",
+    "_screensaver_resume_command": "niri-screensaver-launch kill",
+
+    "customCommands": "[{\"timeout\":300,\"command\":\"niri-screensaver-launch launch\",\"resumeCommand\":\"niri-screensaver-launch kill\",\"name\":\"Screensaver\"}]",
+
+    "_lockTimeout_comment": "Set lockTimeout to your desired total idle-to-lock seconds; Noctalia's native ext-session-lock-v1 lock will overlay the screensaver when this fires.",
+    "lockTimeout": 600,
+
+    "_screenOff_comment": "Use Noctalia's screen-off (DPMS via niri) for the deeper idle stage.",
+    "screenOffCommand": "niri msg action power-off-monitors",
+    "resumeScreenOffCommand": "niri msg action power-on-monitors",
+    "screenOffTimeout": 900
+  }
+}

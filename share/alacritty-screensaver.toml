@@ -1,0 +1,22 @@
+[window]
+decorations = "None"
+opacity = 1.0
+padding = { x = 0, y = 0 }
+dynamic_padding = false
+
+[colors.primary]
+background = "#000000"
+foreground = "#ffffff"
+
+[cursor]
+style = { shape = "Block", blinking = "Off" }
+unfocused_hollow = false
+
+[mouse]
+hide_when_typing = true
+
+[scrolling]
+history = 0
+
+[font]
+size = 16.0

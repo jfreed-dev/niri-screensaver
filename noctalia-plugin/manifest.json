@@ -1,0 +1,39 @@
+{
+  "id": "niri-screensaver",
+  "name": "Niri Screensaver",
+  "version": "0.1.0",
+  "minNoctaliaVersion": "4.7.0",
+  "author": "jfreed-dev",
+  "license": "GPL-3.0-only",
+  "repository": "https://github.com/jfreed-dev/niri-screensaver",
+  "description": "Configuration UI and idle wiring for niri-screensaver. Manages ~/.config/niri-screensaver/config and auto-registers a screensaver entry in Noctalia's IdleService customCommands. Bar widget triggers the screensaver on demand.",
+  "tags": ["Bar", "System", "Niri", "Screensaver"],
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "settings": "Settings.qml"
+  },
+  "dependencies": {
+    "plugins": []
+  },
+  "metadata": {
+    "defaultSettings": {
+      "enabled": true,
+      "idleSeconds": 300,
+      "frameRate": 60,
+      "includeEffects": "",
+      "excludeEffects": "dev_worm",
+      "fadeInEffect": "",
+      "fadeOutEffect": "",
+      "showClock": false,
+      "clockDuration": 3,
+      "clockFormat": "%H:%M",
+      "clockFont": "",
+      "logoPath": "",
+      "cursorHide": true,
+      "dismissOnKey": true,
+      "launcherCommand": "niri-screensaver-launch launch",
+      "killCommand": "niri-screensaver-launch kill"
+    }
+  }
+}

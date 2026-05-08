@@ -1,0 +1,6 @@
+*.swp
+*~
+.DS_Store
+
+# Runtime state written by Noctalia (per-user plugin settings)
+noctalia-plugin/settings.json

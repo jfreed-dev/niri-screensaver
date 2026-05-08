@@ -1,0 +1,25 @@
+// Drop this rule into ~/.config/niri/config.kdl (top level, alongside other window-rule blocks).
+// Matches Alacritty windows launched by niri-screensaver-launch (--class niri-screensaver)
+// and renders them fullscreen with no border, no decorations, blocked from screencasts.
+
+window-rule {
+    match app-id="niri-screensaver"
+
+    open-fullscreen true
+    open-focused true
+
+    // No border / shadow on the screensaver surface
+    border {
+        off
+    }
+    shadow {
+        off
+    }
+
+    // Cover the whole output edge-to-edge
+    geometry-corner-radius 0
+    clip-to-geometry true
+
+    // Don't bleed into screen recordings
+    block-out-from "screencast"
+}

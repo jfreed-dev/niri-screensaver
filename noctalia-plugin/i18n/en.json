@@ -1,0 +1,31 @@
+{
+  "settings": {
+    "title": "Niri Screensaver",
+    "description": "TerminalTextEffects screensaver wired into Noctalia's IdleService. Settings here write to ~/.config/niri-screensaver/config and update the idle hook automatically.",
+
+    "idle-section": "Idle behavior",
+    "enabled": "Enabled",
+    "idle-seconds": "Idle threshold (seconds)",
+
+    "effects-section": "Effects",
+    "include-effects": "Include effects (CSV)",
+    "exclude-effects": "Exclude effects (CSV)",
+    "fade-in": "Fade-in effect",
+    "fade-out": "Fade-out effect",
+
+    "clock-section": "Clock",
+    "show-clock": "Show clock between effects",
+    "clock-format": "Clock format (strftime)",
+
+    "trigger-now": "Trigger now",
+    "stop": "Stop"
+  },
+
+  "barwidget": {
+    "tooltip": "Niri Screensaver",
+    "trigger": "Trigger now",
+    "stop": "Stop",
+    "toggle": "Toggle enabled",
+    "settings": "Open settings"
+  }
+}
