@@ -103,6 +103,12 @@ that adds a Settings tab, a bar widget, and auto-registers the screensaver
 in Noctalia's IdleService when enabled. See `noctalia-plugin/README.md` for
 install instructions (point Noctalia at this repo URL as a custom plugin source).
 
+![Plugin bar widget with screensaver running](noctalia-plugin/preview.png)
+
+> Niri logo mid-gradient with the Noctalia bar visible at the top — the
+> plugin's bar widget (custom monitor-with-image icon, far left of the
+> tray cluster) launches the screensaver on click.
+
 ### Option B — Manual JSON edit
 
 Copy the relevant fields from `docs/noctalia-customCommand.json` into
