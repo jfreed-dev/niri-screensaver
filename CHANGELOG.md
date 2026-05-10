@@ -17,13 +17,17 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   wordmark, and combined variant.
 
 ### Changed
-- Bar widget icon changed from `moon` to `device-desktop-code` — a
-  monitor outline with `<>` inside the screen, more directly evoking
-  "logo rendered on a display" than the previous generic sleep glyph.
-- Bar widget border now respects the user's `bar.showOutline` setting,
-  matching battery / volume / clock. Previously NIconButton's default
-  `Color.mOutline` border was always drawn regardless of the toggle,
-  giving the widget a visible ring that other bar widgets did not have.
+- Bar widget now ships its own monitor-with-image SVG icon
+  (`assets/screensaver.svg`) instead of using a Tabler glyph.
+  Tabler-style strokes (24×24 viewBox, 2px stroke, rounded caps) so it
+  visually matches the other bar glyphs. Recolored at runtime via
+  MultiEffect to follow the active Noctalia theme.
+- Bar widget rebuilt from primitives (`Item` + `Rectangle` capsule +
+  `Image` + `MouseArea`) rather than wrapping `NIconButton`. The
+  capsule fill and border are driven by `Style.capsuleColor` /
+  `Style.capsuleBorderColor`, so they respect the user's
+  `bar.showCapsule` and `bar.showOutline` preferences — same as
+  Battery, Volume, and Clock.
 - **Breaking:** logo file renames so the names match the actual content
   (all three are the same 8-lobed Framework cog at different sizes):
   `framework-gear.txt` → `framework-icon-medium.txt`,
