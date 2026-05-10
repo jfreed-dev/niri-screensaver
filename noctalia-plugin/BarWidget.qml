@@ -22,7 +22,7 @@ NIconButton {
 
   baseSize: Style.getCapsuleHeightForScreen(screen?.name)
   applyUiScale: false
-  icon: "moon"
+  icon: "terminal-2"
   tooltipText: pluginApi?.tr("barwidget.tooltip")
   tooltipDirection: BarService.getTooltipDirection(screen?.name)
   customRadius: Style.radiusL

@@ -17,6 +17,9 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   wordmark, and combined variant.
 
 ### Changed
+- Bar widget icon changed from `moon` to `terminal-2` — better
+  represents what the program is (a terminal animation), and
+  distinguishes it from generic sleep / dark-mode toggles.
 - **Breaking:** logo file renames so the names match the actual content
   (all three are the same 8-lobed Framework cog at different sizes):
   `framework-gear.txt` → `framework-icon-medium.txt`,
