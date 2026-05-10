@@ -88,13 +88,13 @@ ColumnLayout {
       anchors.margins: Style.marginM
       spacing: Style.marginXS
       NText {
-        text: pluginApi?.tr("settings.cliMissing.title")
+        text: pluginApi?.tr("settings.cli-missing.title")
         color: Color.mOnErrorContainer
         font.weight: Style.fontWeightBold
         pointSize: Style.fontSizeL
       }
       NText {
-        text: pluginApi?.tr("settings.cliMissing.desc")
+        text: pluginApi?.tr("settings.cli-missing.desc")
         color: Color.mOnErrorContainer
         wrapMode: Text.WordWrap
         Layout.fillWidth: true
@@ -115,7 +115,7 @@ ColumnLayout {
       spacing: Style.marginS
 
       NText {
-        text: pluginApi?.tr("settings.idleSection")
+        text: pluginApi?.tr("settings.idle-section")
         pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         color: Color.mOnSurface
@@ -136,7 +136,7 @@ ColumnLayout {
 
       NSpinBox {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.idleSeconds")
+        label: pluginApi?.tr("settings.idle-seconds")
         from: 30
         to: 7200
         stepSize: 30
@@ -159,7 +159,7 @@ ColumnLayout {
       spacing: Style.marginS
 
       NText {
-        text: pluginApi?.tr("settings.effectsSection")
+        text: pluginApi?.tr("settings.effects-section")
         pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         color: Color.mOnSurface
@@ -167,32 +167,32 @@ ColumnLayout {
 
       NTextInput {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.includeEffects")
-        placeholderText: pluginApi?.tr("settings.placeholder.includeEffects")
+        label: pluginApi?.tr("settings.include-effects")
+        placeholderText: pluginApi?.tr("settings.placeholder.include-effects")
         text: root.editIncludeEffects
         onEditingFinished: root.editIncludeEffects = text
       }
 
       NTextInput {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.excludeEffects")
-        placeholderText: pluginApi?.tr("settings.placeholder.excludeEffects")
+        label: pluginApi?.tr("settings.exclude-effects")
+        placeholderText: pluginApi?.tr("settings.placeholder.exclude-effects")
         text: root.editExcludeEffects
         onEditingFinished: root.editExcludeEffects = text
       }
 
       NTextInput {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.fadeIn")
-        placeholderText: pluginApi?.tr("settings.placeholder.fadeIn")
+        label: pluginApi?.tr("settings.fade-in")
+        placeholderText: pluginApi?.tr("settings.placeholder.fade-in")
         text: root.editFadeInEffect
         onEditingFinished: root.editFadeInEffect = text
       }
 
       NTextInput {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.fadeOut")
-        placeholderText: pluginApi?.tr("settings.placeholder.fadeOut")
+        label: pluginApi?.tr("settings.fade-out")
+        placeholderText: pluginApi?.tr("settings.placeholder.fade-out")
         text: root.editFadeOutEffect
         onEditingFinished: root.editFadeOutEffect = text
       }
@@ -212,7 +212,7 @@ ColumnLayout {
       spacing: Style.marginS
 
       NText {
-        text: pluginApi?.tr("settings.logoSection")
+        text: pluginApi?.tr("settings.logo-section")
         pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         color: Color.mOnSurface
@@ -221,7 +221,7 @@ ColumnLayout {
       RowLayout {
         spacing: Style.marginM
         NText {
-          text: pluginApi?.tr("settings.randomLogo")
+          text: pluginApi?.tr("settings.random-logo")
           Layout.preferredWidth: 200
         }
         NToggle {
@@ -232,8 +232,8 @@ ColumnLayout {
 
       NTextInput {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.logoDir")
-        placeholderText: pluginApi?.tr("settings.placeholder.logoDir")
+        label: pluginApi?.tr("settings.logo-dir")
+        placeholderText: pluginApi?.tr("settings.placeholder.logo-dir")
         text: root.editLogoDir
         onEditingFinished: root.editLogoDir = text
       }
@@ -253,7 +253,7 @@ ColumnLayout {
       spacing: Style.marginS
 
       NText {
-        text: pluginApi?.tr("settings.clockSection")
+        text: pluginApi?.tr("settings.clock-section")
         pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         color: Color.mOnSurface
@@ -262,7 +262,7 @@ ColumnLayout {
       RowLayout {
         spacing: Style.marginM
         NText {
-          text: pluginApi?.tr("settings.showClock")
+          text: pluginApi?.tr("settings.show-clock")
           Layout.preferredWidth: 200
         }
         NToggle {
@@ -273,7 +273,7 @@ ColumnLayout {
 
       NTextInput {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.clockFormat")
+        label: pluginApi?.tr("settings.clock-format")
         text: root.editClockFormat
         onEditingFinished: root.editClockFormat = text
       }
@@ -286,7 +286,7 @@ ColumnLayout {
     spacing: Style.marginM
 
     NButton {
-      text: pluginApi?.tr("settings.triggerNow")
+      text: pluginApi?.tr("settings.trigger-now")
       icon: "player-play"
       onClicked: {
         var argv = root.mainInstance ? root.mainInstance._launcherArgv()

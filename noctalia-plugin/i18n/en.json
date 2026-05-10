@@ -3,38 +3,38 @@
     "title": "Niri Screensaver",
     "description": "TerminalTextEffects screensaver wired into Noctalia's IdleService. Settings here write to ~/.config/niri-screensaver/config and update the idle hook automatically.",
 
-    "cliMissing": {
+    "cli-missing": {
       "title": "niri-screensaver CLI not found on PATH",
       "desc": "Install the bash side from https://github.com/jfreed-dev/niri-screensaver (run ./install.sh) and reload the plugin. Without it, the launch / kill commands below have nothing to drive."
     },
 
-    "idleSection": "Idle behavior",
+    "idle-section": "Idle behavior",
     "enabled": "Enabled",
-    "idleSeconds": "Idle threshold (seconds)",
+    "idle-seconds": "Idle threshold (seconds)",
 
-    "effectsSection": "Effects",
-    "includeEffects": "Include effects (CSV)",
-    "excludeEffects": "Exclude effects (CSV)",
-    "fadeIn": "Fade-in effect",
-    "fadeOut": "Fade-out effect",
+    "effects-section": "Effects",
+    "include-effects": "Include effects (CSV)",
+    "exclude-effects": "Exclude effects (CSV)",
+    "fade-in": "Fade-in effect",
+    "fade-out": "Fade-out effect",
 
-    "logoSection": "Logo",
-    "randomLogo": "Random logo per cycle",
-    "logoDir": "Logo directory (optional)",
+    "logo-section": "Logo",
+    "random-logo": "Random logo per cycle",
+    "logo-dir": "Logo directory (optional)",
 
-    "clockSection": "Clock",
-    "showClock": "Show clock between effects",
-    "clockFormat": "Clock format (strftime)",
+    "clock-section": "Clock",
+    "show-clock": "Show clock between effects",
+    "clock-format": "Clock format (strftime)",
 
-    "triggerNow": "Trigger now",
+    "trigger-now": "Trigger now",
     "stop": "Stop",
 
     "placeholder": {
-      "includeEffects": "blackhole,matrix,rain",
-      "excludeEffects": "dev_worm",
-      "fadeIn": "expand | slide | middleout",
-      "fadeOut": "burn | crumble | scattered",
-      "logoDir": "~/.local/share/niri-screensaver/logos"
+      "include-effects": "blackhole,matrix,rain",
+      "exclude-effects": "dev_worm",
+      "fade-in": "expand | slide | middleout",
+      "fade-out": "burn | crumble | scattered",
+      "logo-dir": "~/.local/share/niri-screensaver/logos"
     }
   },
 
