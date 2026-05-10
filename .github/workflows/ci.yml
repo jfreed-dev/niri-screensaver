@@ -29,16 +29,40 @@ jobs:
             python3 -c "import json,sys; json.load(open('$f'))" || { echo "invalid: $f"; exit 1; }
           done
 
-  markdown-links:
-    name: markdown lint (basic)
+  doc-links:
+    name: doc links (markdown + inline path mentions)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check for broken relative links in README
+      - name: Check relative paths in docs resolve in-tree
         run: |
-          # Bail if README references files that don't exist in-tree
-          missing=0
-          while IFS= read -r path; do
-            [[ -e "$path" ]] || { echo "missing: $path"; missing=1; }
-          done < <(grep -oP '(?<=\]\()(?!http)[^)#]+' README.md | sort -u)
-          exit $missing
+          # Markdown link check: any [text](relative/path) must exist in-tree.
+          # Inline path mention check: any `backticked` token that looks like a
+          # repo path (starts with a known top-level dir, contains a slash, no
+          # spaces/globs/var-substitutions) must also exist in-tree. Skips
+          # tilde paths (~/.config/...), absolute paths, flags, third-party
+          # repo refs (e.g. hyprwm/Hyprland/...), and command-line examples.
+          prefix_re='^(bin|docs|noctalia-plugin|share|\.github)/'
+          fail=0
+          for doc in README.md CHANGELOG.md CONTRIBUTING.md; do
+            echo "=== $doc ==="
+            while IFS= read -r path; do
+              [[ -e "$path" ]] || { echo "  missing md-link: $path"; fail=1; }
+            done < <(grep -oP '(?<=\]\()(?!http)[^)#]+' "$doc" | sort -u)
+            while IFS= read -r token; do
+              [[ "$token" == *" "*  ]] && continue
+              [[ "$token" == *"*"*  ]] && continue
+              [[ "$token" == *"<"*  ]] && continue
+              [[ "$token" == *"="*  ]] && continue
+              [[ "$token" == *"("*  ]] && continue
+              [[ "$token" == *"#"*  ]] && continue
+              [[ "$token" == "~"*   ]] && continue
+              [[ "$token" == "/"*   ]] && continue
+              [[ "$token" == "-"*   ]] && continue
+              [[ "$token" == *"/"*  ]] || continue
+              [[ "$token" =~ $prefix_re ]] || continue
+              candidate="${token%/}"
+              [[ -e "$candidate" ]] || { echo "  missing inline: $token"; fail=1; }
+            done < <(grep -oP '(?<=`)[^`]+(?=`)' "$doc" | sort -u)
+          done
+          exit $fail

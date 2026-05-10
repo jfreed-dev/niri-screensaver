@@ -4,3 +4,6 @@
 
 # Runtime state written by Noctalia (per-user plugin settings)
 noctalia-plugin/settings.json
+
+# Per-user Claude Code guidance (not checked in)
+CLAUDE.md
