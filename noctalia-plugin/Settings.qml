@@ -1,13 +1,12 @@
 // Settings.qml - niri-screensaver plugin settings tab
 //
-// Renders inside Noctalia's Settings panel. Uses Noctalia's NBox/NText/NToggle
-// widgets so it matches the rest of the shell visually. Form fields write
-// straight into pluginApi.pluginSettings; Main.qml's Connections block picks
-// the change up and re-syncs the shell config + idle hook.
+// Edit-copy pattern: form fields write to local `edit*` properties; the shell
+// calls saveSettings() when the user clicks Save, at which point we copy the
+// edit values back into pluginApi.pluginSettings and call saveSettings() on
+// the plugin API. This matches the noctalia-plugins AGENTS.md convention.
 //
 // SPDX-License-Identifier: GPL-3.0-only
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -15,292 +14,310 @@ import qs.Commons
 import qs.Widgets
 import qs.Services.UI
 
-Item {
-  id: rootItem
+ColumnLayout {
+  id: root
   property var pluginApi: null
-  implicitWidth: 600
-  implicitHeight: layout.implicitHeight
-  width: Math.max(600, parent ? parent.width : 0)
+  spacing: Style.marginL
 
-  property var cfg: rootItem.pluginApi?.pluginSettings || ({})
-  property var defaults: rootItem.pluginApi?.manifest?.metadata?.defaultSettings || ({})
+  // ----- Settings access (cfg → defaults → hardcoded) -----
+  property var cfg: pluginApi?.pluginSettings || ({})
+  property var defaults: pluginApi?.manifest?.metadata?.defaultSettings || ({})
 
-  function tr(k) { return rootItem.pluginApi?.tr(k) || k }
+  // ----- Edit-copy properties -----
+  property bool   editEnabled:        cfg.enabled        ?? defaults.enabled        ?? true
+  property int    editIdleSeconds:    parseInt(cfg.idleSeconds   ?? defaults.idleSeconds   ?? 300)
+  property string editIncludeEffects: cfg.includeEffects ?? defaults.includeEffects ?? ""
+  property string editExcludeEffects: cfg.excludeEffects ?? defaults.excludeEffects ?? "dev_worm"
+  property string editFadeInEffect:   cfg.fadeInEffect   ?? defaults.fadeInEffect   ?? ""
+  property string editFadeOutEffect:  cfg.fadeOutEffect  ?? defaults.fadeOutEffect  ?? ""
+  property bool   editRandomLogo:     cfg.randomLogo     ?? defaults.randomLogo     ?? false
+  property string editLogoDir:        cfg.logoDir        ?? defaults.logoDir        ?? ""
+  property bool   editShowClock:      cfg.showClock      ?? defaults.showClock      ?? false
+  property string editClockFormat:    cfg.clockFormat    ?? defaults.clockFormat    ?? "%H:%M"
 
-  ColumnLayout {
-    id: layout
-    width: parent.width
+  // ----- CLI-missing banner (Main.qml runs detection on startup) -----
+  readonly property var mainInstance: pluginApi?.mainInstance || null
+  readonly property bool cliMissing: mainInstance && mainInstance.cliAvailable === false
+
+  // ----- Save handler (called by the shell on Save) -----
+  function saveSettings() {
+    if (!pluginApi) {
+      Logger.e("NiriScreensaver", "saveSettings: pluginApi is null")
+      return
+    }
+    pluginApi.pluginSettings.enabled        = root.editEnabled
+    pluginApi.pluginSettings.idleSeconds    = root.editIdleSeconds
+    pluginApi.pluginSettings.includeEffects = root.editIncludeEffects
+    pluginApi.pluginSettings.excludeEffects = root.editExcludeEffects
+    pluginApi.pluginSettings.fadeInEffect   = root.editFadeInEffect
+    pluginApi.pluginSettings.fadeOutEffect  = root.editFadeOutEffect
+    pluginApi.pluginSettings.randomLogo     = root.editRandomLogo
+    pluginApi.pluginSettings.logoDir        = root.editLogoDir
+    pluginApi.pluginSettings.showClock      = root.editShowClock
+    pluginApi.pluginSettings.clockFormat    = root.editClockFormat
+    pluginApi.saveSettings()
+    Logger.i("NiriScreensaver", "settings saved")
+  }
+
+  // ----- Title -----
+  NText {
+    Layout.fillWidth: true
+    text: pluginApi?.tr("settings.title")
+    pointSize: Style.fontSizeXXL
+    font.weight: Style.fontWeightBold
+    color: Color.mOnSurface
+  }
+  NText {
+    Layout.fillWidth: true
+    text: pluginApi?.tr("settings.description")
+    color: Color.mOnSurfaceVariant
+    pointSize: Style.fontSizeM
+    wrapMode: Text.WordWrap
+  }
+
+  // ----- CLI-missing banner -----
+  NBox {
+    Layout.fillWidth: true
+    visible: root.cliMissing
+    color: Color.mErrorContainer
+    Layout.preferredHeight: bannerCol.implicitHeight + Style.marginM * 2
+
+    ColumnLayout {
+      id: bannerCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginXS
+      NText {
+        text: pluginApi?.tr("settings.cliMissing.title")
+        color: Color.mOnErrorContainer
+        font.weight: Style.fontWeightBold
+        pointSize: Style.fontSizeL
+      }
+      NText {
+        text: pluginApi?.tr("settings.cliMissing.desc")
+        color: Color.mOnErrorContainer
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
+      }
+    }
+  }
+
+  // ----- Idle behavior -----
+  NBox {
+    Layout.fillWidth: true
+    Layout.preferredHeight: idleCol.implicitHeight + Style.marginM * 2
+    color: Color.mSurfaceVariant
+
+    ColumnLayout {
+      id: idleCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginS
+
+      NText {
+        text: pluginApi?.tr("settings.idleSection")
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      RowLayout {
+        spacing: Style.marginM
+        NText {
+          text: pluginApi?.tr("settings.enabled")
+          color: Color.mOnSurface
+          Layout.preferredWidth: 200
+        }
+        NToggle {
+          checked: root.editEnabled
+          onToggled: root.editEnabled = checked
+        }
+      }
+
+      NSpinBox {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.idleSeconds")
+        from: 30
+        to: 7200
+        stepSize: 30
+        value: root.editIdleSeconds
+        onValueChanged: root.editIdleSeconds = value
+      }
+    }
+  }
+
+  // ----- Effects -----
+  NBox {
+    Layout.fillWidth: true
+    Layout.preferredHeight: fxCol.implicitHeight + Style.marginM * 2
+    color: Color.mSurfaceVariant
+
+    ColumnLayout {
+      id: fxCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginS
+
+      NText {
+        text: pluginApi?.tr("settings.effectsSection")
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      NTextInput {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.includeEffects")
+        placeholderText: pluginApi?.tr("settings.placeholder.includeEffects")
+        text: root.editIncludeEffects
+        onEditingFinished: root.editIncludeEffects = text
+      }
+
+      NTextInput {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.excludeEffects")
+        placeholderText: pluginApi?.tr("settings.placeholder.excludeEffects")
+        text: root.editExcludeEffects
+        onEditingFinished: root.editExcludeEffects = text
+      }
+
+      NTextInput {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.fadeIn")
+        placeholderText: pluginApi?.tr("settings.placeholder.fadeIn")
+        text: root.editFadeInEffect
+        onEditingFinished: root.editFadeInEffect = text
+      }
+
+      NTextInput {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.fadeOut")
+        placeholderText: pluginApi?.tr("settings.placeholder.fadeOut")
+        text: root.editFadeOutEffect
+        onEditingFinished: root.editFadeOutEffect = text
+      }
+    }
+  }
+
+  // ----- Logo -----
+  NBox {
+    Layout.fillWidth: true
+    Layout.preferredHeight: logoCol.implicitHeight + Style.marginM * 2
+    color: Color.mSurfaceVariant
+
+    ColumnLayout {
+      id: logoCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginS
+
+      NText {
+        text: pluginApi?.tr("settings.logoSection")
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      RowLayout {
+        spacing: Style.marginM
+        NText {
+          text: pluginApi?.tr("settings.randomLogo")
+          Layout.preferredWidth: 200
+        }
+        NToggle {
+          checked: root.editRandomLogo
+          onToggled: root.editRandomLogo = checked
+        }
+      }
+
+      NTextInput {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.logoDir")
+        placeholderText: pluginApi?.tr("settings.placeholder.logoDir")
+        text: root.editLogoDir
+        onEditingFinished: root.editLogoDir = text
+      }
+    }
+  }
+
+  // ----- Clock -----
+  NBox {
+    Layout.fillWidth: true
+    Layout.preferredHeight: clockCol.implicitHeight + Style.marginM * 2
+    color: Color.mSurfaceVariant
+
+    ColumnLayout {
+      id: clockCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginS
+
+      NText {
+        text: pluginApi?.tr("settings.clockSection")
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      RowLayout {
+        spacing: Style.marginM
+        NText {
+          text: pluginApi?.tr("settings.showClock")
+          Layout.preferredWidth: 200
+        }
+        NToggle {
+          checked: root.editShowClock
+          onToggled: root.editShowClock = checked
+        }
+      }
+
+      NTextInput {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.clockFormat")
+        text: root.editClockFormat
+        onEditingFinished: root.editClockFormat = text
+      }
+    }
+  }
+
+  // ----- Manual trigger -----
+  RowLayout {
+    Layout.fillWidth: true
     spacing: Style.marginM
 
-    NText {
-      Layout.fillWidth: true
-      text: rootItem.tr("settings.title")
-      pointSize: Style.fontSizeXXL
-      font.weight: Style.fontWeightBold
-      color: Color.mOnSurface
-    }
-    NText {
-      Layout.fillWidth: true
-      text: rootItem.tr("settings.description")
-      color: Color.mOnSurfaceVariant
-      pointSize: Style.fontSizeM
-      wrapMode: Text.WordWrap
-    }
-
-    // ----- Idle behavior -----
-    NBox {
-      Layout.fillWidth: true
-      Layout.preferredHeight: idleCol.implicitHeight + Style.marginM * 2
-      color: Color.mSurfaceVariant
-
-      ColumnLayout {
-        id: idleCol
-        anchors.fill: parent
-        anchors.margins: Style.marginM
-        spacing: Style.marginS
-
-        NText {
-          text: rootItem.tr("settings.idle-section")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          color: Color.mOnSurface
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText {
-            text: rootItem.tr("settings.enabled")
-            color: Color.mOnSurface
-            Layout.preferredWidth: 200
-          }
-          NToggle {
-            checked: rootItem.cfg.enabled === true
-            onToggled: {
-              rootItem.cfg.enabled = checked
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText {
-            text: rootItem.tr("settings.idle-seconds")
-            color: Color.mOnSurface
-            Layout.preferredWidth: 200
-          }
-          SpinBox {
-            from: 30
-            to: 7200
-            stepSize: 30
-            value: parseInt(rootItem.cfg.idleSeconds) || rootItem.defaults.idleSeconds || 300
-            onValueChanged: {
-              rootItem.cfg.idleSeconds = value
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
+    NButton {
+      text: pluginApi?.tr("settings.triggerNow")
+      icon: "player-play"
+      onClicked: {
+        var argv = root.mainInstance ? root.mainInstance._launcherArgv()
+                                     : ["niri-screensaver-launch", "launch"]
+        triggerNowProcess.command = argv
+        triggerNowProcess.running = true
       }
     }
-
-    // ----- Effects -----
-    NBox {
-      Layout.fillWidth: true
-      Layout.preferredHeight: fxCol.implicitHeight + Style.marginM * 2
-      color: Color.mSurfaceVariant
-
-      ColumnLayout {
-        id: fxCol
-        anchors.fill: parent
-        anchors.margins: Style.marginM
-        spacing: Style.marginS
-
-        NText {
-          text: rootItem.tr("settings.effects-section")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          color: Color.mOnSurface
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText {
-            text: rootItem.tr("settings.include-effects")
-            Layout.preferredWidth: 200
-          }
-          TextField {
-            Layout.fillWidth: true
-            text: rootItem.cfg.includeEffects || ""
-            placeholderText: "blackhole,matrix,rain"
-            onEditingFinished: {
-              rootItem.cfg.includeEffects = text
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText {
-            text: rootItem.tr("settings.exclude-effects")
-            Layout.preferredWidth: 200
-          }
-          TextField {
-            Layout.fillWidth: true
-            text: rootItem.cfg.excludeEffects || ""
-            placeholderText: "dev_worm"
-            onEditingFinished: {
-              rootItem.cfg.excludeEffects = text
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText {
-            text: rootItem.tr("settings.fade-in")
-            Layout.preferredWidth: 200
-          }
-          TextField {
-            Layout.fillWidth: true
-            text: rootItem.cfg.fadeInEffect || ""
-            placeholderText: "expand | slide | middleout"
-            onEditingFinished: {
-              rootItem.cfg.fadeInEffect = text
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText {
-            text: rootItem.tr("settings.fade-out")
-            Layout.preferredWidth: 200
-          }
-          TextField {
-            Layout.fillWidth: true
-            text: rootItem.cfg.fadeOutEffect || ""
-            placeholderText: "burn | crumble | scattered"
-            onEditingFinished: {
-              rootItem.cfg.fadeOutEffect = text
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
+    NButton {
+      text: pluginApi?.tr("settings.stop")
+      icon: "stop"
+      outlined: true
+      onClicked: {
+        var argv = root.mainInstance ? root.mainInstance._killArgv()
+                                     : ["niri-screensaver-launch", "kill"]
+        stopNowProcess.command = argv
+        stopNowProcess.running = true
       }
     }
+  }
 
-    // ----- Logo -----
-    NBox {
-      Layout.fillWidth: true
-      Layout.preferredHeight: logoCol.implicitHeight + Style.marginM * 2
-      color: Color.mSurfaceVariant
-
-      ColumnLayout {
-        id: logoCol
-        anchors.fill: parent
-        anchors.margins: Style.marginM
-        spacing: Style.marginS
-
-        NText {
-          text: rootItem.tr("settings.logo-section")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          color: Color.mOnSurface
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText { text: rootItem.tr("settings.random-logo"); Layout.preferredWidth: 200 }
-          NToggle {
-            checked: rootItem.cfg.randomLogo === true
-            onToggled: {
-              rootItem.cfg.randomLogo = checked
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText { text: rootItem.tr("settings.logo-dir"); Layout.preferredWidth: 200 }
-          TextField {
-            Layout.fillWidth: true
-            text: rootItem.cfg.logoDir || ""
-            placeholderText: "~/.local/share/niri-screensaver/logos"
-            onEditingFinished: {
-              rootItem.cfg.logoDir = text
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-      }
+  Process {
+    id: triggerNowProcess
+    onExited: function (code) {
+      if (code !== 0) Logger.w("NiriScreensaver", "trigger (Settings) exited with code", code)
     }
-
-    // ----- Clock -----
-    NBox {
-      Layout.fillWidth: true
-      Layout.preferredHeight: clockCol.implicitHeight + Style.marginM * 2
-      color: Color.mSurfaceVariant
-
-      ColumnLayout {
-        id: clockCol
-        anchors.fill: parent
-        anchors.margins: Style.marginM
-        spacing: Style.marginS
-
-        NText {
-          text: rootItem.tr("settings.clock-section")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          color: Color.mOnSurface
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText { text: rootItem.tr("settings.show-clock"); Layout.preferredWidth: 200 }
-          NToggle {
-            checked: rootItem.cfg.showClock === true
-            onToggled: {
-              rootItem.cfg.showClock = checked
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-
-        RowLayout {
-          spacing: Style.marginM
-          NText { text: rootItem.tr("settings.clock-format"); Layout.preferredWidth: 200 }
-          TextField {
-            Layout.fillWidth: true
-            text: rootItem.cfg.clockFormat || "%H:%M"
-            onEditingFinished: {
-              rootItem.cfg.clockFormat = text
-              rootItem.pluginApi.saveSettings()
-            }
-          }
-        }
-      }
+  }
+  Process {
+    id: stopNowProcess
+    onExited: function (code) {
+      if (code !== 0) Logger.w("NiriScreensaver", "stop (Settings) exited with code", code)
     }
-
-    // ----- Manual trigger -----
-    RowLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      Button {
-        text: rootItem.tr("settings.trigger-now")
-        onClicked: triggerNowProcess.running = true
-      }
-      Button {
-        text: rootItem.tr("settings.stop")
-        onClicked: stopNowProcess.running = true
-      }
-    }
-
-    Process { id: triggerNowProcess; command: ["sh", "-c", rootItem.cfg.launcherCommand || "niri-screensaver-launch launch"] }
-    Process { id: stopNowProcess;    command: ["sh", "-c", rootItem.cfg.killCommand || "niri-screensaver-launch kill"] }
   }
 }

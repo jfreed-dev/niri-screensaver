@@ -32,6 +32,9 @@ Item {
   property bool hovering: false
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screen?.name)
 
+  // Reach back to Main.qml for centralized launcher/kill argv resolution
+  readonly property var mainInstance: pluginApi?.mainInstance || null
+
   implicitWidth: capsuleHeight
   implicitHeight: capsuleHeight
 
@@ -65,8 +68,31 @@ Item {
     }
   }
 
-  Process { id: launchProc }
-  Process { id: killProc }
+  Process {
+    id: launchProc
+    onExited: function (code) {
+      if (code !== 0) Logger.w("NiriScreensaver", "launch (bar) exited with code", code)
+    }
+  }
+  Process {
+    id: killProc
+    onExited: function (code) {
+      if (code !== 0) Logger.w("NiriScreensaver", "kill (bar) exited with code", code)
+    }
+  }
+
+  function _runLaunch() {
+    var argv = root.mainInstance ? root.mainInstance._launcherArgv()
+                                 : ["niri-screensaver-launch", "launch"]
+    launchProc.command = argv
+    launchProc.running = true
+  }
+  function _runKill() {
+    var argv = root.mainInstance ? root.mainInstance._killArgv()
+                                 : ["niri-screensaver-launch", "kill"]
+    killProc.command = argv
+    killProc.running = true
+  }
 
   NPopupContextMenu {
     id: contextMenu
@@ -81,11 +107,9 @@ Item {
       PanelService.closeContextMenu(screen)
 
       if (action === "trigger") {
-        launchProc.command = ["sh", "-c", root.pluginApi?.pluginSettings?.launcherCommand || "niri-screensaver-launch launch"]
-        launchProc.running = true
+        root._runLaunch()
       } else if (action === "stop") {
-        killProc.command = ["sh", "-c", root.pluginApi?.pluginSettings?.killCommand || "niri-screensaver-launch kill"]
-        killProc.running = true
+        root._runKill()
       } else if (action === "toggle") {
         if (root.pluginApi) {
           var en = root.pluginApi.pluginSettings.enabled === true
@@ -122,8 +146,7 @@ Item {
       if (mouse.button === Qt.RightButton) {
         PanelService.showContextMenu(contextMenu, root, screen)
       } else {
-        launchProc.command = ["sh", "-c", root.pluginApi?.pluginSettings?.launcherCommand || "niri-screensaver-launch launch"]
-        launchProc.running = true
+        root._runLaunch()
       }
     }
   }

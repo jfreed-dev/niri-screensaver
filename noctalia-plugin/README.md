@@ -1,108 +1,81 @@
-# Niri Screensaver — Noctalia plugin
+# Niri Screensaver
 
-A QuickShell/QML plugin for [Noctalia](https://github.com/noctalia-dev/noctalia-shell)
-that drives the [niri-screensaver](../README.md) script package.
+Idle-aware terminal screensaver for [niri](https://github.com/niri-wm/niri),
+driven by [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects)
+and rendered in a fullscreen Alacritty surface.
 
-## What it provides
+![Preview](preview.png)
 
-- A **Settings tab** under Noctalia's plugin settings: idle threshold, effect
-  include/exclude lists, fade-in/out, clock toggle, manual trigger and stop
-  buttons.
-- **Auto-wires** the screensaver into Noctalia's `IdleService` by maintaining a
-  `Niri Screensaver` entry in `Settings.data.idle.customCommands`. Toggle the
-  plugin's "Enabled" switch to add or remove the entry without editing JSON.
-- **Auto-wires** the `screenLock` and `screenUnlock` hook slots so the
-  screensaver tears down cleanly when Noctalia's lock fires (avoids burning
-  CPU under the lock surface). Only written when the slot is empty — never
-  clobbers a hook you've authored. Requires Noctalia → Settings → Hooks to be
-  enabled (the plugin does not flip that master toggle for you).
-- **Persists** all settings to `~/.config/niri-screensaver/config` (the same
-  shell-format config the script driver reads), so the plugin and the CLI
-  stay in sync.
-- A **bar widget**: click to trigger; right-click for stop / toggle / settings.
-- An **IPC surface**: `plugin:niri-screensaver` exposes `launch`, `kill`,
-  `toggle` — bind these to niri keybinds via `qs -c noctalia-shell ipc call
-  plugin:niri-screensaver launch`.
+## What this plugin does
 
-The plugin does **not** ship the actual screensaver — it expects
-`niri-screensaver-launch` to be on `$PATH` (run the repo's `install.sh` first).
+- **Auto-registers a screensaver entry** in Noctalia's
+  `Settings.data.idle.customCommands` based on an Enabled toggle, so the
+  screensaver kicks in after your configured idle threshold without manual
+  JSON edits.
+- **Auto-wires the screenLock / screenUnlock hook slots** so the screensaver
+  tears down cleanly when Noctalia's lock fires (avoids burning CPU under the
+  lock surface). Only writes to hook slots that are empty or already hold the
+  plugin's command — never clobbers a hook you authored manually.
+- **Bar widget**: click to trigger; right-click for stop / toggle enabled /
+  open settings. Recolors to follow the active Noctalia theme.
+- **Settings tab** for idle threshold, effect include/exclude lists,
+  fade-in/out, clock, random-logo picker, and a manual trigger/stop pair.
+- **IPC surface** `plugin:niri-screensaver` exposing `launch`, `kill`,
+  `toggle` — bind to niri keybinds via
+  `qs ipc call plugin:niri-screensaver launch`.
+- **Writes settings** to `~/.config/niri-screensaver/config` (XDG-aware) in
+  shell `KEY="value"` format — the same file the bash CLI reads. The plugin
+  and the CLI stay in lockstep.
 
-## Install
+## Requires the bash CLI
 
-Until this plugin lands in the official `noctalia-plugins` registry, install
-manually as a custom plugin source.
-
-### Option 1 — Custom registry source
-
-Edit `~/.config/noctalia/plugins.json` and add this repo as a source:
-
-```json
-{
-  "sources": [
-    { "enabled": true, "name": "Noctalia Plugins",
-      "url": "https://github.com/noctalia-dev/noctalia-plugins" },
-    { "enabled": true, "name": "niri-screensaver",
-      "url": "https://github.com/jfreed-dev/niri-screensaver" }
-  ]
-}
-```
-
-(Adjust the URL once the repo has a public remote.) Open Noctalia Settings →
-Plugins → Available, find **Niri Screensaver**, install it.
-
-### Option 2 — Local symlink (developing the plugin)
+This plugin **does not ship** the actual screensaver. It expects
+`niri-screensaver-launch` on `$PATH`. Install it first from
+<https://github.com/jfreed-dev/niri-screensaver>:
 
 ```bash
-ln -s ~/Repos/niri-screensaver/noctalia-plugin ~/.config/noctalia/plugins/niri-screensaver
+git clone https://github.com/jfreed-dev/niri-screensaver
+cd niri-screensaver
+./install.sh                 # → ~/.local/bin
 ```
 
-Then restart Noctalia: `pkill qs && qs -c noctalia-shell &`
+Also requires `alacritty` and the `tte` Python CLI on PATH (`pip install
+--user terminaltexteffects`). If the CLI is missing the plugin surfaces a
+banner at the top of its settings panel.
+
+## Compositor support
+
+niri-specific. The launcher enumerates outputs via `niri msg --json outputs`
+and relies on niri's window-rule on `app-id="niri-screensaver"` for
+fullscreen. Won't work on Hyprland / Sway / labwc without porting.
 
 ## Settings
 
-Each toggle / field in the plugin's Settings tab maps to a key in the
-shell-format `~/.config/niri-screensaver/config` that the script driver
-reads. Changing a value writes the file immediately (via the QML
-`pluginSettingsChanged` signal) — no plugin reload needed.
+Each field in the plugin's Settings tab maps to a key in the shell-format
+config the bash CLI reads. Changing a value writes the file on save and
+re-syncs the idle hook.
 
-| UI label | shell key | default | notes |
-|----------|-----------|---------|-------|
-| Enabled | (registers an entry in `Settings.data.idle.customCommands`) | `true` | Toggling off removes the entry |
-| Idle threshold (seconds) | sets the `timeout` of that customCommand | `300` | |
-| Include effects (CSV) | `INCLUDE_EFFECTS` | _empty_ | Comma-separated effect names |
-| Exclude effects (CSV) | `EXCLUDE_EFFECTS` | `dev_worm` | Skipped if Include is non-empty |
-| Fade-in effect | `FADE_IN_EFFECT` | _empty_ | One-shot effect on launch |
-| Fade-out effect | `FADE_OUT_EFFECT` | _empty_ | One-shot effect on dismiss |
-| Random logo per cycle | `RANDOM_LOGO` | `false` | Re-rolls the logo each effect cycle |
-| Logo directory (optional) | `LOGO_DIR` | _empty_ | Where the random picker scans; defaults to installed `share/logos/` |
-| Show clock between effects | `SHOW_CLOCK` | `false` | |
-| Clock format (strftime) | `CLOCK_FORMAT` | `%H:%M` | |
-| Trigger now | (runs `launcherCommand`) | `niri-screensaver-launch launch` | |
-| Stop | (runs `killCommand`) | `niri-screensaver-launch kill` | |
+| UI label | Shell key | Default |
+|---|---|---|
+| Enabled | (registers an entry in `Settings.data.idle.customCommands`) | `true` |
+| Idle threshold (seconds) | sets `timeout` of that customCommand | `300` |
+| Include effects (CSV) | `INCLUDE_EFFECTS` | _empty_ |
+| Exclude effects (CSV) | `EXCLUDE_EFFECTS` | `dev_worm` |
+| Fade-in effect | `FADE_IN_EFFECT` | _empty_ |
+| Fade-out effect | `FADE_OUT_EFFECT` | _empty_ |
+| Random logo per cycle | `RANDOM_LOGO` | `false` |
+| Logo directory | `LOGO_DIR` | _empty_ |
+| Show clock between effects | `SHOW_CLOCK` | `false` |
+| Clock format (strftime) | `CLOCK_FORMAT` | `%H:%M` |
+| Trigger now | (runs `launcherCommand`) | `niri-screensaver-launch launch` |
+| Stop | (runs `killCommand`) | `niri-screensaver-launch kill` |
 
-The full list of keys (including those without a UI surface like
-`CURSOR_HIDE`, `DISMISS_ON_KEY`, `FRAME_RATE`, `CLOCK_DURATION`,
-`CLOCK_FONT`) is in the main repo README's Configuration table. Editing
-`~/.config/niri-screensaver/config` directly works too — values come back
-into the plugin UI on next plugin load.
+Settings not surfaced in the UI (`FRAME_RATE`, `CLOCK_DURATION`,
+`CLOCK_FONT`, `CURSOR_HIDE`, `DISMISS_ON_KEY`) can be edited directly in
+`~/.config/niri-screensaver/config` — they round-trip through the plugin on
+next reload.
 
-## Files
+## License
 
-```
-manifest.json   Plugin metadata + defaultSettings.
-Main.qml        Persistence + idle wiring + IPC handlers.
-Settings.qml    Configuration UI rendered in Noctalia Settings.
-BarWidget.qml   Status-bar capsule with click + context menu.
-i18n/en.json    English strings (nested objects, not flat dotted keys —
-                Noctalia's tr() walks nested properties).
-```
-
-## Hacking
-
-Enable Noctalia's debug mode to get hot-reload on QML edits — Settings →
-Developer → Debug. Then any change in this directory triggers a reload of
-the plugin without restarting the shell.
-
-The settings UI is intentionally minimal — extend it by editing
-`Settings.qml`. The shape of `pluginApi.pluginSettings` is whatever you
-declare in `manifest.json` under `metadata.defaultSettings`.
+GPL-3.0-only. See [LICENSE](https://github.com/jfreed-dev/niri-screensaver/blob/main/LICENSE)
+in the upstream repo.

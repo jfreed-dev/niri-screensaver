@@ -1,11 +1,16 @@
 // Main.qml - niri-screensaver Noctalia plugin runtime
 //
 // Responsibilities:
-//   1. Persist plugin settings to ~/.config/niri-screensaver/config (shell KEY="value" format)
-//      so the script-side driver picks them up.
+//   1. Persist plugin settings to $XDG_CONFIG_HOME/niri-screensaver/config (or
+//      ~/.config/niri-screensaver/config) in shell KEY="value" format so the
+//      script-side driver picks them up.
 //   2. Auto-register / deregister a screensaver entry in Noctalia's
 //      Settings.data.idle.customCommands array based on plugin enable state.
-//   3. Expose IPC: plugin:niri-screensaver { launch | kill | toggle }
+//   3. Auto-write Noctalia's screenLock / screenUnlock hook slots (never
+//      clobbering hooks the user authored manually).
+//   4. Expose IPC: plugin:niri-screensaver { launch | kill | toggle }
+//   5. Detect whether the bash CLI (niri-screensaver-launch) is on PATH so
+//      Settings.qml can surface a banner if it's missing.
 //
 // SPDX-License-Identifier: GPL-3.0-only
 import QtQuick
@@ -20,25 +25,33 @@ Item {
   // Identifier used to find / remove our entry in Noctalia's idle.customCommands
   readonly property string entryName: "Niri Screensaver"
 
-  // ----- File paths -----
-  readonly property string configDir: Quickshell.env("HOME") + "/.config/niri-screensaver"
+  // Centralized defaults (also mirrored in manifest.json defaultSettings)
+  readonly property string defaultLauncherCommand: "niri-screensaver-launch launch"
+  readonly property string defaultKillCommand: "niri-screensaver-launch kill"
+  readonly property string cliBinary: "niri-screensaver-launch"
+
+  // ----- File paths (XDG-aware) -----
+  readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
+  readonly property string configDir: configHome + "/niri-screensaver"
   readonly property string configFile: configDir + "/config"
+
+  // ----- CLI presence (true|false|null=unknown), surfaced to Settings.qml -----
+  property var cliAvailable: null
 
   // ----- Lifecycle -----
   Component.onCompleted: {
     if (pluginApi) {
       _syncAll()
+      _detectCli()
     }
   }
   onPluginApiChanged: {
     if (pluginApi) {
       _syncAll()
+      _detectCli()
     }
   }
 
-  // Re-sync whenever settings are saved. saveSettings() in the plugin API
-  // reassigns pluginSettings (Object.assign copy) precisely so QML bindings
-  // re-evaluate; the resulting pluginSettingsChanged signal is our hook.
   Connections {
     target: pluginApi
     enabled: pluginApi !== null
@@ -51,24 +64,42 @@ Item {
     _syncHooks()
   }
 
-  // ----- Shell config writer -----
-  function _shEscape(s) {
-    if (s === undefined || s === null) return ""
-    return String(s).replace(/"/g, '\\"')
+  // ----- Resolve a "command-or-default" setting into an exec array -----
+  // For trusted defaults we use direct exec (no shell). For user overrides we
+  // fall back to `sh -c` because the user may want shell semantics (env vars,
+  // pipes, etc.) — they own the value.
+  function _resolveCommand(value, fallbackString, directArgv) {
+    if (!value || value === fallbackString) return directArgv
+    return ["sh", "-c", String(value)]
+  }
+  function _launcherArgv() {
+    return _resolveCommand(
+      root.pluginApi?.pluginSettings?.launcherCommand,
+      defaultLauncherCommand,
+      ["niri-screensaver-launch", "launch"]
+    )
+  }
+  function _killArgv() {
+    return _resolveCommand(
+      root.pluginApi?.pluginSettings?.killCommand,
+      defaultKillCommand,
+      ["niri-screensaver-launch", "kill"]
+    )
   }
 
+  // ----- Shell config writer -----
   function _renderShellConfig() {
     var s = pluginApi.pluginSettings
     var bool = function (b) { return b ? "true" : "false" }
     return [
       "# niri-screensaver config (managed by Noctalia plugin)",
-      "FRAME_RATE=\"" + (s.frameRate || 60) + "\"",
+      "FRAME_RATE=\"" + _shEscape(s.frameRate || 60) + "\"",
       "INCLUDE_EFFECTS=\"" + _shEscape(s.includeEffects) + "\"",
       "EXCLUDE_EFFECTS=\"" + _shEscape(s.excludeEffects) + "\"",
       "FADE_IN_EFFECT=\"" + _shEscape(s.fadeInEffect) + "\"",
       "FADE_OUT_EFFECT=\"" + _shEscape(s.fadeOutEffect) + "\"",
       "SHOW_CLOCK=\"" + bool(s.showClock) + "\"",
-      "CLOCK_DURATION=\"" + (s.clockDuration || 3) + "\"",
+      "CLOCK_DURATION=\"" + _shEscape(s.clockDuration || 3) + "\"",
       "CLOCK_FORMAT=\"" + _shEscape(s.clockFormat) + "\"",
       "CLOCK_FONT=\"" + _shEscape(s.clockFont) + "\"",
       "LOGO_FILE=\"" + _shEscape(s.logoPath) + "\"",
@@ -80,17 +111,36 @@ Item {
     ].join("\n")
   }
 
-  Process {
-    id: writeConfigProcess
-    running: false
+  // Escape a value for inclusion inside a double-quoted shell string.
+  // Backslash, dollar, backtick, double-quote all need escaping inside "...".
+  function _shEscape(s) {
+    if (s === undefined || s === null) return ""
+    return String(s).replace(/\\/g, "\\\\").replace(/\$/g, "\\$").replace(/`/g, "\\`").replace(/"/g, '\\"')
   }
 
+  Process {
+    id: writeConfigProcess
+    onExited: function (code) {
+      if (code !== 0) {
+        Logger.w("NiriScreensaver", "config write exited with code", code, "for", root.configFile)
+      }
+    }
+  }
+
+  // Write config via positional shell args + a random heredoc marker.
+  // - Paths are passed via "$1" / "$2", so a malicious HOME / XDG_CONFIG_HOME
+  //   value cannot escape into the script body.
+  // - The heredoc marker is randomized and collision-checked against the
+  //   content, so a user-supplied config value cannot terminate the heredoc.
   function _writeShellConfig() {
+    if (!pluginApi) return
     var content = _renderShellConfig()
-    // mkdir -p && write atomically via tee
-    writeConfigProcess.command = ["sh", "-c",
-      "mkdir -p \"" + configDir + "\" && cat > \"" + configFile + "\" << '__NIRI_SS_EOF__'\n" + content + "__NIRI_SS_EOF__\n"
-    ]
+    var eof = "__NIRI_SS_EOF_" + Math.random().toString(36).slice(2)
+    while (content.indexOf(eof) !== -1) {
+      eof = "__NIRI_SS_EOF_" + Math.random().toString(36).slice(2)
+    }
+    var script = 'mkdir -p "$1" && cat > "$2" <<\'' + eof + "'\n" + content + eof + "\n"
+    writeConfigProcess.command = ["sh", "-c", script, "sh", root.configDir, root.configFile]
     writeConfigProcess.running = true
   }
 
@@ -100,7 +150,10 @@ Item {
     var raw = ""
     try {
       raw = Settings.data.idle.customCommands || "[]"
-    } catch (e) { return }
+    } catch (e) {
+      Logger.w("NiriScreensaver", "Settings.data.idle.customCommands unreachable:", e)
+      return
+    }
 
     var arr = []
     try { arr = JSON.parse(raw) } catch (e) { arr = [] }
@@ -112,8 +165,8 @@ Item {
       arr.push({
         name: root.entryName,
         timeout: parseInt(pluginApi.pluginSettings.idleSeconds) || 300,
-        command: pluginApi.pluginSettings.launcherCommand || "niri-screensaver-launch launch",
-        resumeCommand: pluginApi.pluginSettings.killCommand || "niri-screensaver-launch kill"
+        command: pluginApi.pluginSettings.launcherCommand || root.defaultLauncherCommand,
+        resumeCommand: pluginApi.pluginSettings.killCommand || root.defaultKillCommand
       })
     }
     Settings.data.idle.customCommands = JSON.stringify(arr)
@@ -127,7 +180,7 @@ Item {
   // Requires Settings.data.hooks.enabled = true to actually fire — the plugin
   // does not flip that master toggle for the user.
   function _hookKillCmd() {
-    return pluginApi?.pluginSettings?.killCommand || "niri-screensaver-launch kill"
+    return pluginApi?.pluginSettings?.killCommand || root.defaultKillCommand
   }
 
   function _syncHooks() {
@@ -155,25 +208,57 @@ Item {
     }
   }
 
+  // ----- CLI presence detection -----
+  // Runs once at startup. Settings.qml reads `cliAvailable` to decide whether
+  // to render the "install niri-screensaver first" banner.
+  Process {
+    id: cliDetectProcess
+    onExited: function (code) {
+      root.cliAvailable = (code === 0)
+      if (!root.cliAvailable) {
+        Logger.w("NiriScreensaver", root.cliBinary, "not found on PATH")
+      }
+    }
+  }
+  function _detectCli() {
+    cliDetectProcess.command = ["sh", "-c", "command -v " + root.cliBinary]
+    cliDetectProcess.running = true
+  }
+
   // ----- IPC handlers -----
   IpcHandler {
     target: "plugin:niri-screensaver"
 
-    function launch() { triggerProcess.command = ["sh", "-c", root.pluginApi?.pluginSettings?.launcherCommand || "niri-screensaver-launch launch"]; triggerProcess.running = true }
-    function kill()   { triggerProcess.command = ["sh", "-c", root.pluginApi?.pluginSettings?.killCommand || "niri-screensaver-launch kill"]; triggerProcess.running = true }
+    function launch() {
+      ipcLaunchProcess.command = root._launcherArgv()
+      ipcLaunchProcess.running = true
+    }
+    function kill() {
+      ipcKillProcess.command = root._killArgv()
+      ipcKillProcess.running = true
+    }
     function toggle() {
-      var enabled = root.pluginApi?.pluginSettings?.enabled === true
+      if (!root.pluginApi) return
+      var enabled = root.pluginApi.pluginSettings.enabled === true
       root.pluginApi.pluginSettings.enabled = !enabled
       root.pluginApi.saveSettings()
     }
   }
 
   Process {
-    id: triggerProcess
-    running: false
+    id: ipcLaunchProcess
+    onExited: function (code) {
+      if (code !== 0) Logger.w("NiriScreensaver", "launch (IPC) exited with code", code)
+    }
+  }
+  Process {
+    id: ipcKillProcess
+    onExited: function (code) {
+      if (code !== 0) Logger.w("NiriScreensaver", "kill (IPC) exited with code", code)
+    }
   }
 
-  // ----- Cleanup on plugin disable -----
+  // ----- Cleanup on plugin disable / unload -----
   Component.onDestruction: {
     if (pluginApi) {
       // Best-effort: remove our customCommands entry so we don't leave a dangling hook
@@ -191,6 +276,10 @@ Item {
           if (Settings.data.hooks.screenUnlock === killCmd) Settings.data.hooks.screenUnlock = ""
         }
       } catch (e) { /* ignore */ }
+
+      if (typeof Settings.saveImmediate === "function") {
+        Settings.saveImmediate()
+      }
     }
   }
 }

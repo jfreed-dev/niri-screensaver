@@ -3,26 +3,39 @@
     "title": "Niri Screensaver",
     "description": "TerminalTextEffects screensaver wired into Noctalia's IdleService. Settings here write to ~/.config/niri-screensaver/config and update the idle hook automatically.",
 
-    "idle-section": "Idle behavior",
+    "cliMissing": {
+      "title": "niri-screensaver CLI not found on PATH",
+      "desc": "Install the bash side from https://github.com/jfreed-dev/niri-screensaver (run ./install.sh) and reload the plugin. Without it, the launch / kill commands below have nothing to drive."
+    },
+
+    "idleSection": "Idle behavior",
     "enabled": "Enabled",
-    "idle-seconds": "Idle threshold (seconds)",
+    "idleSeconds": "Idle threshold (seconds)",
 
-    "effects-section": "Effects",
-    "include-effects": "Include effects (CSV)",
-    "exclude-effects": "Exclude effects (CSV)",
-    "fade-in": "Fade-in effect",
-    "fade-out": "Fade-out effect",
+    "effectsSection": "Effects",
+    "includeEffects": "Include effects (CSV)",
+    "excludeEffects": "Exclude effects (CSV)",
+    "fadeIn": "Fade-in effect",
+    "fadeOut": "Fade-out effect",
 
-    "logo-section": "Logo",
-    "random-logo": "Random logo per cycle",
-    "logo-dir": "Logo directory (optional)",
+    "logoSection": "Logo",
+    "randomLogo": "Random logo per cycle",
+    "logoDir": "Logo directory (optional)",
 
-    "clock-section": "Clock",
-    "show-clock": "Show clock between effects",
-    "clock-format": "Clock format (strftime)",
+    "clockSection": "Clock",
+    "showClock": "Show clock between effects",
+    "clockFormat": "Clock format (strftime)",
 
-    "trigger-now": "Trigger now",
-    "stop": "Stop"
+    "triggerNow": "Trigger now",
+    "stop": "Stop",
+
+    "placeholder": {
+      "includeEffects": "blackhole,matrix,rain",
+      "excludeEffects": "dev_worm",
+      "fadeIn": "expand | slide | middleout",
+      "fadeOut": "burn | crumble | scattered",
+      "logoDir": "~/.local/share/niri-screensaver/logos"
+    }
   },
 
   "barwidget": {

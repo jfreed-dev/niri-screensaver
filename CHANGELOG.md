@@ -14,6 +14,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deprecation gets chased automatically rather than by hand.
 - `SECURITY.md` with supported-versions table and private vulnerability
   reporting policy.
+- Plugin: `cliAvailable` detection in `Main.qml` and a CLI-missing
+  banner at the top of `Settings.qml` — when `niri-screensaver-launch`
+  isn't on `$PATH`, the plugin says so loudly instead of failing
+  silently on every launch attempt.
+
+### Changed
+- Plugin: bumped to **0.3.0** (registry submission readiness).
+- Plugin: `manifest.json` `repository` field now points to
+  `noctalia-dev/noctalia-plugins` (matches the registry convention for
+  PRs into the registry); upstream link remains in `README.md`.
+- Plugin: tag set updated to `["Bar", "Utility", "Niri"]` — "Utility"
+  fits the registry's tag taxonomy better than "System".
+- Plugin: `preview.png` resized from 960×640 to 960×540 (16:9) to match
+  the registry's required dimensions.
+- Plugin: `Settings.qml` rewritten around the AGENTS.md edit-copy
+  pattern — exposes a `saveSettings()` function (called by Noctalia on
+  Save), with local `edit*` properties feeding `pluginSettings` only on
+  save rather than per-keystroke. Raw `TextField` / `Button` / `SpinBox`
+  swapped for `NTextInput` / `NButton` / `NSpinBox`.
+- Plugin: `i18n/en.json` — added all placeholder strings (previously
+  hardcoded literals in `Settings.qml`) and a `cliMissing` banner;
+  dropped the in-QML `tr() || k` fallback wrapper per AGENTS.md
+  guidance ("the translation system handles missing keys"); renamed
+  hyphenated keys (`idle-section`, `idle-seconds`, etc.) to camelCase
+  (`idleSection`, `idleSeconds`) for consistency with other plugins.
+- Plugin: `README.md` rewritten for end-user / registry context —
+  drops the obsolete "Custom registry source" install instructions
+  that won't apply post-merge.
+
+### Fixed
+- **Plugin security: heredoc-EOF shell injection in `_writeShellConfig`.**
+  Config values were interpolated into a `sh -c` heredoc with a fixed
+  `__NIRI_SS_EOF__` marker, so a setting whose value contained that
+  string would terminate the heredoc early and expose whatever followed
+  to shell parsing. New implementation passes paths via positional
+  arguments (`$1`/`$2` inside the script, never string-substituted)
+  and uses a randomized, collision-checked heredoc marker. Also fixes
+  the related issue where a `HOME` / `XDG_CONFIG_HOME` containing
+  shell metacharacters would corrupt the write.
+- Plugin: `_shEscape` was only escaping `"`; now also escapes
+  backslash, `$`, and backtick, so values inside double-quoted shell
+  strings can't break out of the quoting.
+- Plugin: `Process` objects now have `onExited` handlers that log
+  non-zero exits via `Logger.w` — previously, missing CLI / permission
+  errors were silently swallowed.
+- Plugin: `Component.onDestruction` now calls `Settings.saveImmediate()`
+  after clearing the `customCommands` entry and hook slots, so a crash
+  mid-cleanup can't leave Noctalia with stale state.
+- Plugin: file paths now honor `XDG_CONFIG_HOME` before falling back to
+  `$HOME/.config`.
+- Plugin: launcher / kill `Process` invocations now use direct exec
+  (`["niri-screensaver-launch", "launch"]`) when the user has not
+  overridden the default, sidestepping the shell entirely. Falls back
+  to `sh -c` only when the user has customized the command (where
+  shell semantics may be intentional).
+- Plugin: centralized launcher/kill defaults as `readonly property`
+  declarations on Main.qml; BarWidget.qml and Settings.qml call back
+  through `pluginApi.mainInstance._launcherArgv()` /
+  `_killArgv()` rather than re-string-littering the defaults.
 - `Makefile` and `scripts/health-check.sh` provide local CI parity:
   `make check` runs the same shellcheck + JSON validation + doc-link
   checks as `.github/workflows/ci.yml`; `make health` adds runtime /
