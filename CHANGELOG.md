@@ -1,12 +1,15 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
-roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to **niri-screensaver** are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
 ### Added
+- `SECURITY.md` with supported-versions table and private vulnerability
+  reporting policy.
 - Niri logo set: real brand mark ASCII-ized from the official SVG (looks
   like a stylized "i" or, depending on how you read it, an owl), `NIRI`
   ANSI Shadow wordmark, scrolling-tiles representation of niri's
@@ -17,6 +20,13 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   wordmark, and combined variant.
 
 ### Changed
+- `CODE_OF_CONDUCT.md` replaced with the full Contributor Covenant v2.1
+  text (was a 14-line abbreviated summary). Reports go to the maintainer
+  email noted in the file.
+- `CONTRIBUTING.md` gains standard `Reporting Issues` / `Code of Conduct`
+  / `License` footer sections.
+- `CHANGELOG.md` header re-aligned with sibling-project conventions
+  (em-dash between version and date; "based on" / "adheres to" wording).
 - Bar widget now ships its own monitor-with-image SVG icon
   (`assets/screensaver.svg`) instead of using a Tabler glyph.
   Tabler-style strokes (24×24 viewBox, 2px stroke, rounded caps) so it
@@ -45,7 +55,7 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - All `framework-name-with-*.txt` files now end with the same single
   trailing blank line as every other logo file (cosmetic uniformity).
 
-## [0.2.0] - 2026-05-08
+## [0.2.0] — 2026-05-08
 
 ### Added
 - `RANDOM_LOGO` config key — when `true`, the inner driver picks a different
@@ -87,7 +97,7 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   user pressing Escape. A 300 ms drain after enabling mouse tracking lets
   the replies arrive and be discarded before key listening starts.
 
-## [0.1.0] - 2026-05-07
+## [0.1.0] — 2026-05-07
 
 ### Added
 - Initial release. Terminal-based screensaver for Niri driven by

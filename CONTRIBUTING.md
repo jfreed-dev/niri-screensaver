@@ -67,8 +67,20 @@ ln -s "$PWD/noctalia-plugin" ~/.config/noctalia/plugins/niri-screensaver
    plugin setting, a new CLI option), update README.md too.
 5. The PR template will prompt you for the rest.
 
-## Reporting bugs / requesting features
+## Reporting Issues
 
-Open an issue using one of the templates. Bug reports especially benefit
-from `niri-screensaver-ctl status` output + a few lines of relevant
-`~/.config/niri-screensaver/config` so we can reproduce locally.
+Use the issue templates in [.github/](.github/). Bug reports especially
+benefit from `niri-screensaver-ctl status` output + a few lines of relevant
+`~/.config/niri-screensaver/config` so we can reproduce locally. For
+security-sensitive reports, follow [SECURITY.md](SECURITY.md) instead of
+opening a public issue.
+
+## Code of Conduct
+
+Participation in this project is governed by the
+[Code of Conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+By submitting a pull request, you agree to license your contribution under
+GPL-3.0-only. See [LICENSE](LICENSE).
