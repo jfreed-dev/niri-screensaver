@@ -17,9 +17,13 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   wordmark, and combined variant.
 
 ### Changed
-- Bar widget icon changed from `moon` to `terminal-2` — better
-  represents what the program is (a terminal animation), and
-  distinguishes it from generic sleep / dark-mode toggles.
+- Bar widget icon changed from `moon` to `device-desktop-code` — a
+  monitor outline with `<>` inside the screen, more directly evoking
+  "logo rendered on a display" than the previous generic sleep glyph.
+- Bar widget border now respects the user's `bar.showOutline` setting,
+  matching battery / volume / clock. Previously NIconButton's default
+  `Color.mOutline` border was always drawn regardless of the toggle,
+  giving the widget a visible ring that other bar widgets did not have.
 - **Breaking:** logo file renames so the names match the actual content
   (all three are the same 8-lobed Framework cog at different sizes):
   `framework-gear.txt` → `framework-icon-medium.txt`,

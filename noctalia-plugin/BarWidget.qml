@@ -22,12 +22,18 @@ NIconButton {
 
   baseSize: Style.getCapsuleHeightForScreen(screen?.name)
   applyUiScale: false
-  icon: "terminal-2"
+  icon: "device-desktop-code"
   tooltipText: pluginApi?.tr("barwidget.tooltip")
   tooltipDirection: BarService.getTooltipDirection(screen?.name)
   customRadius: Style.radiusL
 
+  // Match battery/volume styling: capsule fill and border come from the
+  // Style constants so they respect the user's bar.showCapsule and
+  // bar.showOutline preferences (NIconButton's default colorBorder is
+  // Color.mOutline, which ignores those settings and always draws).
   colorBg: Style.capsuleColor
+  colorBorder: Style.capsuleBorderColor
+  colorBorderHover: Style.capsuleBorderColor
   colorFg: Color.mOnSurface
   colorBgHover: Color.mHover
   colorFgHover: Color.mOnHover
