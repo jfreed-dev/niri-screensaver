@@ -10,14 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `SECURITY.md` with supported-versions table and private vulnerability
   reporting policy.
-- Niri logo set: real brand mark ASCII-ized from the official SVG (looks
-  like a stylized "i" or, depending on how you read it, an owl), `NIRI`
-  ANSI Shadow wordmark, scrolling-tiles representation of niri's
-  signature layout, plus combined variants. Niri logo files are
-  CC BY-SA 4.0 (carried over from upstream).
-- Hyprland logo set: official teardrop ASCII-ized from
-  `hyprwm/Hyprland/assets/hyprland.png`, `HYPRLAND` ANSI Shadow
-  wordmark, and combined variant.
+- `Makefile` and `scripts/health-check.sh` provide local CI parity:
+  `make check` runs the same shellcheck + JSON validation + doc-link
+  checks as `.github/workflows/ci.yml`; `make health` adds runtime /
+  install-state checks. `make plugin-link` symlinks the plugin into
+  Noctalia for hot-reload dev. `scripts/check-doc-links.sh` extracts
+  the doc-link logic so the Makefile and CI can share it.
+  `scripts/uninstall.sh` reverses `install.sh`.
+- `docs/development/` directory with `SETUP.md`, `WORKFLOW.md`,
+  `LINTING.md`, `TESTING.md`, and `UPSTREAM-SUBMISSION.md` (the last
+  covering both the noctalia-plugins registry and the awesome-niri
+  curated list).
+- `share/logos/LICENSES.md` documents per-file attribution and
+  trademark status for every bundled logo (BSD-3-Clause notice for
+  Hyprland-derived ASCII; nominative-fair-use language for Framework
+  and CachyOS marks).
+- `README.md` gains a Trademarks section explicitly disclaiming
+  affiliation with Framework, CachyOS, Hyprland, and niri.
+- Niri logo set: ASCII art inspired by niri's stylized "i" / arguably
+  owl-shaped brand mark, `NIRI` ANSI Shadow wordmark, scrolling-tiles
+  representation of niri's signature layout, plus combined variants.
+- Hyprland logo set: ASCII derivative of
+  `hyprwm/Hyprland/assets/hyprland.png` (BSD-3-Clause; attribution in
+  `share/logos/LICENSES.md`), `HYPRLAND` ANSI Shadow wordmark, and
+  combined variant.
 
 ### Changed
 - `CODE_OF_CONDUCT.md` replaced with the full Contributor Covenant v2.1
@@ -54,6 +70,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   If you had `LOGO_FILE` pointing at one of the old names, update it.
 - All `framework-name-with-*.txt` files now end with the same single
   trailing blank line as every other logo file (cosmetic uniformity).
+- `README.md` Logos section restructured: bundled logos now grouped by
+  project (CachyOS / Framework / Hyprland / niri), tightened
+  descriptions, in-table licensing claims removed (those live in
+  `share/logos/LICENSES.md`).
+- `README.md` niri-icon attribution corrected: previously claimed
+  CC BY-SA 4.0 from upstream, but the niri repo (`niri-wm/niri`) does
+  not publish a logo asset under any explicit license. Restated as
+  community artwork inspired by niri's brand mark.
 
 ## [0.2.0] — 2026-05-08
 

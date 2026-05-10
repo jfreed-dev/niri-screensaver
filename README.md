@@ -162,31 +162,68 @@ ln -sf ~/.local/share/niri-screensaver/logos/framework-name-with-icon-medium.txt
        ~/.config/niri-screensaver/logo.txt
 ```
 
+### CachyOS
+
 | File | Contents |
 |------|----------|
-| `framework-icon.txt` | Real Framework 8-lobed cog logo (40×18, ASCII-ized from the official SVG) |
-| `framework-icon-medium.txt` | Same cog, medium (30×14) |
-| `framework-icon-small.txt` | Same cog, compact (24×10) |
+| `cachyos-icon.txt` | CachyOS shield |
+| `cachyos-name.txt` | `CACHYOS` ANSI Shadow wordmark |
+| `cachyos-name-with-icon.txt` | Shield + wordmark |
+
+### Framework
+
+| File | Contents |
+|------|----------|
+| `framework-icon.txt` | 8-lobed Framework cog (40×18) |
+| `framework-icon-medium.txt` | Same cog (30×14) |
+| `framework-icon-small.txt` | Same cog (24×10) |
 | `framework-name.txt` | `FRAMEWORK` ANSI Shadow wordmark |
 | `framework-name-with-icon.txt` | Cog (40×18) + wordmark |
 | `framework-name-with-icon-medium.txt` | Cog (30×14) + wordmark |
 | `framework-name-with-icon-small.txt` | Cog (24×10) + wordmark |
-| `framework-name-with-cachyos-icon.txt` | CachyOS shield + `FRAMEWORK` wordmark (for CachyOS-on-Framework setups) |
-| `cachyos-icon.txt` | CachyOS shield (lifted from fastfetch's CachyOS logo) |
-| `cachyos-name.txt` | `CACHYOS` ANSI Shadow wordmark |
-| `cachyos-name-with-icon.txt` | Shield + `CACHYOS` wordmark |
-| `niri-icon.txt` | Real niri brand icon (stylized "i" / arguably owl-shaped, ASCII-ized from the official SVG, [CC BY-SA](https://creativecommons.org/licenses/by-sa/4.0/)) |
-| `niri-name.txt` | `NIRI` ANSI Shadow wordmark |
-| `niri-name-with-icon.txt` | Real niri icon + `NIRI` wordmark |
-| `niri-tiles.txt` | Five scrolling-tile columns of varying widths — niri's signature layout |
-| `niri-name-with-tiles.txt` | Tiles + `NIRI` wordmark |
-| `hyprland-icon.txt` | Real Hyprland teardrop icon, ASCII-ized from `hyprwm/Hyprland/assets/hyprland.png` |
-| `hyprland-name.txt` | `HYPRLAND` ANSI Shadow wordmark |
-| `hyprland-name-with-icon.txt` | Teardrop + `HYPRLAND` wordmark |
+| `framework-name-with-cachyos-icon.txt` | CachyOS shield + `FRAMEWORK` wordmark — for CachyOS-on-Framework setups |
 
-Adding your own: drop any UTF-8 text file into `~/.local/share/niri-screensaver/logos/`
-(or `share/logos/` in the repo) and point `LOGO_FILE` at it. TTE renders any
-text content; block characters (`█`) and ANSI Shadow letters look best.
+### Hyprland
+
+| File | Contents |
+|------|----------|
+| `hyprland-icon.txt` | Hyprland teardrop |
+| `hyprland-name.txt` | `HYPRLAND` ANSI Shadow wordmark |
+| `hyprland-name-with-icon.txt` | Teardrop + wordmark |
+
+### niri
+
+| File | Contents |
+|------|----------|
+| `niri-icon.txt` | Stylized "i" / arguably owl-shaped niri brand mark |
+| `niri-name.txt` | `NIRI` ANSI Shadow wordmark |
+| `niri-name-with-icon.txt` | Icon + wordmark |
+| `niri-tiles.txt` | Five scrolling-tile columns — niri's signature layout |
+| `niri-name-with-tiles.txt` | Tiles + wordmark |
+
+Per-file attribution, licensing, and trademark notes are in
+[share/logos/LICENSES.md](share/logos/LICENSES.md).
+
+### Adding your own
+
+Drop any UTF-8 text file into `~/.local/share/niri-screensaver/logos/`
+(or `share/logos/` in the repo) and point `LOGO_FILE` at it. TTE
+renders any text content; block characters (`█`) and ANSI Shadow
+letters look best.
+
+## Trademarks
+
+niri-screensaver is **not affiliated with or endorsed by** Framework
+Computer Inc., the CachyOS project, the Hyprland project, or the niri
+project. Brand marks rendered in `share/logos/` belong to their
+respective owners and are referenced for the convenience of users who
+own / run those products. The Hyprland-derived ASCII carries the
+upstream BSD-3-Clause attribution; Framework and CachyOS marks are
+provided for nominative use only. See
+[share/logos/LICENSES.md](share/logos/LICENSES.md) for per-file detail.
+
+If you are a brand owner and would like a logo removed or the
+attribution adjusted, please open an issue.
 
 ## What was dropped from cosmic-order
 
