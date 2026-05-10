@@ -1,0 +1,19 @@
+# .github/dependabot.yml
+#
+# Auto-tracks GitHub Actions versions used in .github/workflows/.
+# Dependabot opens a PR when a referenced action publishes a new
+# release (e.g. actions/checkout@v5 → @v6, the Node 20 → Node 24
+# deprecation we just chased manually).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - dependencies
+      - github_actions
+    open-pull-requests-limit: 5

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `.github/dependabot.yml` — weekly tracking of GitHub Actions versions
+  in `.github/workflows/`. Dependabot will open PRs as referenced
+  actions publish new releases, so the next Node-runtime / API
+  deprecation gets chased automatically rather than by hand.
 - `SECURITY.md` with supported-versions table and private vulnerability
   reporting policy.
 - `Makefile` and `scripts/health-check.sh` provide local CI parity:
