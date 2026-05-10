@@ -138,15 +138,20 @@ fi
 # Plugin manifest sanity
 if [[ -f noctalia-plugin/manifest.json ]]; then
     if python3 -c "
-import json
+import json, sys
 m = json.load(open('noctalia-plugin/manifest.json'))
-required = {'name', 'version', 'description', 'author', 'defaultSettings'}
-missing = required - m.keys()
-import sys; sys.exit(0 if not missing else 1)
+# Top-level keys required by noctalia-dev/noctalia-plugins/schema.json
+required_top = {'id', 'name', 'version', 'minNoctaliaVersion', 'author',
+                'license', 'repository', 'description', 'entryPoints'}
+missing = required_top - m.keys()
+# Plus the nested metadata.defaultSettings
+if 'defaultSettings' not in m.get('metadata', {}):
+    missing.add('metadata.defaultSettings')
+sys.exit(0 if not missing else 1)
 " 2>/dev/null; then
-        pass "noctalia-plugin/manifest.json has required keys"
+        pass "noctalia-plugin/manifest.json has registry-required keys"
     else
-        fail "noctalia-plugin/manifest.json missing one of: name/version/description/author/defaultSettings"
+        fail "noctalia-plugin/manifest.json missing one of: id/name/version/minNoctaliaVersion/author/license/repository/description/entryPoints/metadata.defaultSettings"
     fi
 else
     fail "noctalia-plugin/manifest.json missing"
