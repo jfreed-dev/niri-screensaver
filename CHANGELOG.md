@@ -28,6 +28,9 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `Style.capsuleBorderColor`, so they respect the user's
   `bar.showCapsule` and `bar.showOutline` preferences — same as
   Battery, Volume, and Clock.
+- Plugin `preview.png` refreshed: now shows the niri brand mark + NIRI
+  wordmark settled mid-gradient, with the Noctalia bar visible at the
+  top. Replaces the previous CACHYOS mid-glitch frame.
 - **Breaking:** logo file renames so the names match the actual content
   (all three are the same 8-lobed Framework cog at different sizes):
   `framework-gear.txt` → `framework-icon-medium.txt`,
