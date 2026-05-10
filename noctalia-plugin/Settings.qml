@@ -1,7 +1,7 @@
 // Settings.qml - niri-screensaver plugin settings tab
 //
 // Edit-copy pattern: form fields write to local `edit*` properties; the shell
-// calls saveSettings() when the user clicks Save, at which point we copy the
+// calls saveSettings() when the user clicks Apply, at which point we copy the
 // edit values back into pluginApi.pluginSettings and call saveSettings() on
 // the plugin API. This matches the noctalia-plugins AGENTS.md convention.
 //
@@ -39,7 +39,7 @@ ColumnLayout {
   readonly property var mainInstance: pluginApi?.mainInstance || null
   readonly property bool cliMissing: mainInstance && mainInstance.cliAvailable === false
 
-  // ----- Save handler (called by the shell on Save) -----
+  // ----- Save handler (called by the shell on Apply) -----
   function saveSettings() {
     if (!pluginApi) {
       Logger.e("NiriScreensaver", "saveSettings: pluginApi is null")
@@ -79,7 +79,7 @@ ColumnLayout {
   NBox {
     Layout.fillWidth: true
     visible: root.cliMissing
-    color: Color.mErrorContainer
+    color: Color.mError
     Layout.preferredHeight: bannerCol.implicitHeight + Style.marginM * 2
 
     ColumnLayout {
@@ -89,13 +89,13 @@ ColumnLayout {
       spacing: Style.marginXS
       NText {
         text: pluginApi?.tr("settings.cli-missing.title")
-        color: Color.mOnErrorContainer
+        color: Color.mOnError
         font.weight: Style.fontWeightBold
         pointSize: Style.fontSizeL
       }
       NText {
         text: pluginApi?.tr("settings.cli-missing.desc")
-        color: Color.mOnErrorContainer
+        color: Color.mOnError
         wrapMode: Text.WordWrap
         Layout.fillWidth: true
       }
@@ -112,7 +112,7 @@ ColumnLayout {
       id: idleCol
       anchors.fill: parent
       anchors.margins: Style.marginM
-      spacing: Style.marginS
+      spacing: Style.marginM
 
       NText {
         text: pluginApi?.tr("settings.idle-section")
@@ -121,26 +121,24 @@ ColumnLayout {
         color: Color.mOnSurface
       }
 
-      RowLayout {
-        spacing: Style.marginM
-        NText {
-          text: pluginApi?.tr("settings.enabled")
-          color: Color.mOnSurface
-          Layout.preferredWidth: 200
-        }
-        NToggle {
-          checked: root.editEnabled
-          onToggled: root.editEnabled = checked
-        }
+      NToggle {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.enabled")
+        description: pluginApi?.tr("settings.enabled-desc")
+        checked: root.editEnabled
+        defaultValue: root.defaults.enabled
+        onToggled: checked => root.editEnabled = checked
       }
 
       NSpinBox {
         Layout.fillWidth: true
         label: pluginApi?.tr("settings.idle-seconds")
+        description: pluginApi?.tr("settings.idle-seconds-desc")
         from: 30
         to: 7200
         stepSize: 30
         value: root.editIdleSeconds
+        defaultValue: root.defaults.idleSeconds
         onValueChanged: root.editIdleSeconds = value
       }
     }
@@ -156,7 +154,7 @@ ColumnLayout {
       id: fxCol
       anchors.fill: parent
       anchors.margins: Style.marginM
-      spacing: Style.marginS
+      spacing: Style.marginM
 
       NText {
         text: pluginApi?.tr("settings.effects-section")
@@ -168,32 +166,40 @@ ColumnLayout {
       NTextInput {
         Layout.fillWidth: true
         label: pluginApi?.tr("settings.include-effects")
+        description: pluginApi?.tr("settings.include-effects-desc")
         placeholderText: pluginApi?.tr("settings.placeholder.include-effects")
         text: root.editIncludeEffects
+        defaultValue: root.defaults.includeEffects
         onEditingFinished: root.editIncludeEffects = text
       }
 
       NTextInput {
         Layout.fillWidth: true
         label: pluginApi?.tr("settings.exclude-effects")
+        description: pluginApi?.tr("settings.exclude-effects-desc")
         placeholderText: pluginApi?.tr("settings.placeholder.exclude-effects")
         text: root.editExcludeEffects
+        defaultValue: root.defaults.excludeEffects
         onEditingFinished: root.editExcludeEffects = text
       }
 
       NTextInput {
         Layout.fillWidth: true
         label: pluginApi?.tr("settings.fade-in")
+        description: pluginApi?.tr("settings.fade-in-desc")
         placeholderText: pluginApi?.tr("settings.placeholder.fade-in")
         text: root.editFadeInEffect
+        defaultValue: root.defaults.fadeInEffect
         onEditingFinished: root.editFadeInEffect = text
       }
 
       NTextInput {
         Layout.fillWidth: true
         label: pluginApi?.tr("settings.fade-out")
+        description: pluginApi?.tr("settings.fade-out-desc")
         placeholderText: pluginApi?.tr("settings.placeholder.fade-out")
         text: root.editFadeOutEffect
+        defaultValue: root.defaults.fadeOutEffect
         onEditingFinished: root.editFadeOutEffect = text
       }
     }
@@ -209,7 +215,7 @@ ColumnLayout {
       id: logoCol
       anchors.fill: parent
       anchors.margins: Style.marginM
-      spacing: Style.marginS
+      spacing: Style.marginM
 
       NText {
         text: pluginApi?.tr("settings.logo-section")
@@ -218,23 +224,22 @@ ColumnLayout {
         color: Color.mOnSurface
       }
 
-      RowLayout {
-        spacing: Style.marginM
-        NText {
-          text: pluginApi?.tr("settings.random-logo")
-          Layout.preferredWidth: 200
-        }
-        NToggle {
-          checked: root.editRandomLogo
-          onToggled: root.editRandomLogo = checked
-        }
+      NToggle {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.random-logo")
+        description: pluginApi?.tr("settings.random-logo-desc")
+        checked: root.editRandomLogo
+        defaultValue: root.defaults.randomLogo
+        onToggled: checked => root.editRandomLogo = checked
       }
 
       NTextInput {
         Layout.fillWidth: true
         label: pluginApi?.tr("settings.logo-dir")
+        description: pluginApi?.tr("settings.logo-dir-desc")
         placeholderText: pluginApi?.tr("settings.placeholder.logo-dir")
         text: root.editLogoDir
+        defaultValue: root.defaults.logoDir
         onEditingFinished: root.editLogoDir = text
       }
     }
@@ -250,7 +255,7 @@ ColumnLayout {
       id: clockCol
       anchors.fill: parent
       anchors.margins: Style.marginM
-      spacing: Style.marginS
+      spacing: Style.marginM
 
       NText {
         text: pluginApi?.tr("settings.clock-section")
@@ -259,22 +264,21 @@ ColumnLayout {
         color: Color.mOnSurface
       }
 
-      RowLayout {
-        spacing: Style.marginM
-        NText {
-          text: pluginApi?.tr("settings.show-clock")
-          Layout.preferredWidth: 200
-        }
-        NToggle {
-          checked: root.editShowClock
-          onToggled: root.editShowClock = checked
-        }
+      NToggle {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.show-clock")
+        description: pluginApi?.tr("settings.show-clock-desc")
+        checked: root.editShowClock
+        defaultValue: root.defaults.showClock
+        onToggled: checked => root.editShowClock = checked
       }
 
       NTextInput {
         Layout.fillWidth: true
         label: pluginApi?.tr("settings.clock-format")
+        description: pluginApi?.tr("settings.clock-format-desc")
         text: root.editClockFormat
+        defaultValue: root.defaults.clockFormat
         onEditingFinished: root.editClockFormat = text
       }
     }

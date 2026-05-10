@@ -34,16 +34,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   save rather than per-keystroke. Raw `TextField` / `Button` / `SpinBox`
   swapped for `NTextInput` / `NButton` / `NSpinBox`.
 - Plugin: `i18n/en.json` — added all placeholder strings (previously
-  hardcoded literals in `Settings.qml`) and a `cliMissing` banner;
-  dropped the in-QML `tr() || k` fallback wrapper per AGENTS.md
-  guidance ("the translation system handles missing keys"); renamed
-  hyphenated keys (`idle-section`, `idle-seconds`, etc.) to camelCase
-  (`idleSection`, `idleSeconds`) for consistency with other plugins.
+  hardcoded literals in `Settings.qml`), `cli-missing` banner, and
+  one-line descriptions for every user-visible setting; dropped the
+  in-QML `tr() || k` fallback wrapper per AGENTS.md guidance.
+- Plugin: `Settings.qml` refactored to use N* widgets' built-in
+  `label` / `description` / `defaultValue` properties, removing the
+  `RowLayout { NText + NToggle }` wrappers that produced inconsistent
+  layouts. Matches the pattern used by reference plugins (clipper,
+  timer, pomodoro). The `defaultValue` indicator now shows users when
+  their value differs from the manifest default.
 - Plugin: `README.md` rewritten for end-user / registry context —
   drops the obsolete "Custom registry source" install instructions
   that won't apply post-merge.
 
 ### Fixed
+- **Plugin bug: CLI-missing banner used `Color.mErrorContainer` and
+  `Color.mOnErrorContainer`, neither of which exists in
+  `noctalia-shell`'s Color singleton.** Only `mError` / `mOnError` are
+  defined. The banner would have rendered with undefined colors —
+  effectively invisible. Swapped to the real tokens.
 - **Plugin security: heredoc-EOF shell injection in `_writeShellConfig`.**
   Config values were interpolated into a `sh -c` heredoc with a fixed
   `__NIRI_SS_EOF__` marker, so a setting whose value contained that
