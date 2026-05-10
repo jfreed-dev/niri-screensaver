@@ -31,6 +31,10 @@ roughly tracks [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Plugin `preview.png` refreshed: now shows the niri brand mark + NIRI
   wordmark settled mid-gradient, with the Noctalia bar visible at the
   top. Replaces the previous CACHYOS mid-glitch frame.
+- README demo `docs/screensaver.gif` refreshed: 8-second loop of the
+  niri brand mark fullscreen with one of TTE's particle/rain effects
+  on the cyan-to-magenta gradient. Replaces the previous CACHYOS
+  RANDOM_LOGO frame; same dimensions and similar file size.
 - **Breaking:** logo file renames so the names match the actual content
   (all three are the same 8-lobed Framework cog at different sizes):
   `framework-gear.txt` → `framework-icon-medium.txt`,

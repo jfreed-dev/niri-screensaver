@@ -11,9 +11,10 @@ desktop shell.
 
 ![Screensaver demo](docs/screensaver.gif)
 
-> 8-second loop on CachyOS — `RANDOM_LOGO=true` happens to land on the Framework
-> hex cog and one of TTE's color-gradient effects. (The visible cursor at the
-> bottom is a known issue tracked in [`TODO.md`](TODO.md).)
+> 8-second loop on CachyOS — the niri brand mark rendered with one of
+> TTE's particle/rain effects on the cyan-to-magenta gradient. (The
+> small cursor in the top-left is a known issue tracked in
+> [`TODO.md`](TODO.md).)
 
 Forked from [cosmic-order](https://github.com/jonfreed/cosmic-order)'s screensaver
 component, with the COSMIC-specific glue (cosmic-randr, cosmic-greeter, the
