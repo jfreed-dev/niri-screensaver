@@ -16,7 +16,7 @@ desktop shell.
 > small cursor in the top-left is a known issue tracked in
 > [`TODO.md`](TODO.md).)
 
-Forked from [cosmic-order](https://github.com/jonfreed/cosmic-order)'s screensaver
+Forked from [cosmic-order](https://github.com/jfreed-dev/cosmic-order)'s screensaver
 component, with the COSMIC-specific glue (cosmic-randr, cosmic-greeter, the
 focus-follows-cursor / autotile dance) stripped out and replaced with niri-native
 equivalents. Idle, lock, and DPMS are deferred to Noctalia rather than reimplemented
