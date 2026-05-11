@@ -37,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hardcoded literals in `Settings.qml`), `cli-missing` banner, and
   one-line descriptions for every user-visible setting; dropped the
   in-QML `tr() || k` fallback wrapper per AGENTS.md guidance.
+- Plugin: `pluginSettingsChanged` handler in `Main.qml` is now debounced
+  by 250ms. Live testing showed Noctalia's panel framework fires the
+  signal ~5× per Apply click (once per changed property + once for the
+  explicit save), which previously triggered 5 concurrent
+  `writeConfigProcess` invocations writing identical content to
+  `~/.config/niri-screensaver/config`. Single Timer in `Main.qml`
+  collapses the burst into one disk write. `Component.onCompleted` and
+  `onPluginApiChanged` still invoke `_syncAll()` directly for the eager
+  first-run path.
 - Plugin: `Settings.qml` refactored to use N* widgets' built-in
   `label` / `description` / `defaultValue` properties, removing the
   `RowLayout { NText + NToggle }` wrappers that produced inconsistent

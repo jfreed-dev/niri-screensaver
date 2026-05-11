@@ -52,10 +52,22 @@ Item {
     }
   }
 
+  // Debounce: Noctalia's panel framework can fire pluginSettingsChanged
+  // ~5× for a single Apply click (once per property + once for the explicit
+  // save). Without this, every Apply spawns 5 concurrent writeConfigProcess
+  // invocations writing identical content. Collapsing into one ~250ms
+  // window cuts disk activity 5× and avoids the (currently-safe) race.
+  Timer {
+    id: syncDebounce
+    interval: 250
+    repeat: false
+    onTriggered: root._syncAll()
+  }
+
   Connections {
     target: pluginApi
     enabled: pluginApi !== null
-    function onPluginSettingsChanged() { root._syncAll() }
+    function onPluginSettingsChanged() { syncDebounce.restart() }
   }
 
   function _syncAll() {
