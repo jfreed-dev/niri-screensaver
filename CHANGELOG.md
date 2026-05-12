@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-12
+
 ### Fixed
 - Launcher now parks the mouse pointer in the bottom-right corner after
   spawning the screensaver windows, via `wlrctl` (preferred) or `ydotool`
