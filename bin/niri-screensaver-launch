@@ -95,6 +95,22 @@ kill_screensaver() {
     return 0
 }
 
+# Park the pointer in the bottom-right corner so it doesn't sit visible on top
+# of the screensaver. Niri's cursor.hide-after-inactive-ms then hides it after
+# the configured idle window. Tries wlrctl (wlr-virtual-pointer) first since
+# it's daemonless under niri; falls back to ydotool. No-op + one-time hint if
+# neither is installed.
+warp_cursor_away() {
+    if command -v wlrctl &>/dev/null; then
+        wlrctl pointer move 1000000 1000000 2>/dev/null && return 0
+    fi
+    if command -v ydotool &>/dev/null; then
+        ydotool mousemove --absolute 99999 99999 2>/dev/null && return 0
+    fi
+    log_info "Install wlrctl (or ydotool) to auto-park the pointer; or set 'cursor { hide-after-inactive-ms 500 }' in your niri config."
+    return 1
+}
+
 launch_screensaver() {
     local force=""
     for arg in "$@"; do
@@ -142,6 +158,12 @@ launch_screensaver() {
             ((i++))
         done
     fi
+
+    # Park the pointer after the last alacritty has had a moment to map.
+    # Done before the inner driver enables mouse tracking, so the warp doesn't
+    # generate motion events that would falsely dismiss the screensaver.
+    sleep 0.2
+    warp_cursor_away || true
 }
 
 toggle_screensaver() {

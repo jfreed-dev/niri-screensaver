@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Launcher now parks the mouse pointer in the bottom-right corner after
+  spawning the screensaver windows, via `wlrctl` (preferred) or `ydotool`
+  if installed. Resolves the TODO `[bug] Mouse cursor handling during
+  screensaver` — the pointer no longer sits visible on top of the
+  animation. Combine with niri's `cursor { hide-after-inactive-ms 500 }`
+  for a full hide. If neither tool is installed, the launcher logs a
+  one-time hint.
+
 ### Added
 - `.github/dependabot.yml` — weekly tracking of GitHub Actions versions
   in `.github/workflows/`. Dependabot will open PRs as referenced

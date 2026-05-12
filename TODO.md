@@ -6,17 +6,7 @@ with `[bug]` are confirmed defects.
 
 ## Known issues
 
-- **[bug] Mouse cursor handling during screensaver.** Niri's
-  `cursor { hide-after-inactive-ms }` auto-hide doesn't fully resolve: the
-  cursor sometimes remains visible on the screensaver surface, or "moves
-  out of frame" (lands on a neighboring output / off-screen region) when
-  the alacritty window opens fullscreen. Investigate:
-  - Does `niri msg action focus-monitor-next` between spawns leave the
-    pointer on the wrong output?
-  - Should the launcher warp the pointer to the center of each output via
-    `ydotool` or `wlrctl` after spawn?
-  - Or: hide the cursor entirely while the screensaver runs (compositor
-    cursor opacity / quickshell hint) and restore on exit.
+(none currently tracked)
 
 ## Untested integration paths
 

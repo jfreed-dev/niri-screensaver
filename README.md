@@ -12,9 +12,7 @@ desktop shell.
 ![Screensaver demo](docs/screensaver.gif)
 
 > 8-second loop on CachyOS — the niri brand mark rendered with one of
-> TTE's particle/rain effects on the cyan-to-magenta gradient. (The
-> small cursor in the top-left is a known issue tracked in
-> [`TODO.md`](TODO.md).)
+> TTE's particle/rain effects on the cyan-to-magenta gradient.
 
 Forked from [cosmic-order](https://github.com/jfreed-dev/cosmic-order)'s screensaver
 component, with the COSMIC-specific glue (cosmic-randr, cosmic-greeter, the
@@ -148,8 +146,11 @@ niri-screensaver-ctl effects   # list all TTE effects
 | `RANDOM_LOGO` | `false` | When `true`, pick a random `*.txt` from `LOGO_DIR` before each effect cycle |
 | `LOGO_DIR` | _empty_ | Directory the random picker scans. Defaults to the installed `share/logos/` |
 
-The mouse pointer is left to niri — set `cursor { hide-after-inactive-ms }` in
-your niri config to auto-hide it during the screensaver.
+On launch, the launcher parks the mouse pointer in the bottom-right corner via
+`wlrctl` (preferred) or `ydotool` if either is installed. For a full hide,
+combine with niri's `cursor { hide-after-inactive-ms 500 }` so the parked
+pointer disappears after the idle window. With neither tool installed, the
+launcher logs a one-time hint and falls back to niri-only auto-hide.
 
 ## Logos
 
