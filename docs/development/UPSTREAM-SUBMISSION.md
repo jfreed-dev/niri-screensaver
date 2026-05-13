@@ -143,8 +143,12 @@ A one-line entry in the curated list at
 
 Per [awesome-niri/CONTRIBUTING.md](https://github.com/niri-wm/awesome-niri/blob/main/CONTRIBUTING.md):
 
-- Format exactly: `[Resource Title](url) — description.`
-  (Note the **em dash** `—`, not a hyphen.)
+- Format exactly: `[Resource Title](url) - description.`
+  (Note the **ASCII hyphen** ` - `, with a space on each side. The
+  upstream `CONTRIBUTING.md` confusingly shows an em dash in its example,
+  but `awesome-lint`'s `awesome-list-item` rule actively rejects
+  en/em dashes with `List item link and description separated by invalid
+  en-dash or em-dash`. Every existing entry in the README uses hyphen.)
 - Sort entries alphabetically by title within their section.
 - Keep the description short and simple.
 - Capitalization rule: write **niri** in lowercase in descriptions.
@@ -165,20 +169,23 @@ A draft entry to add at the right alphabetical position (between
 `niri-autoselect-portal` and `nirilayout`):
 
 ```markdown
-- [niri-screensaver](https://github.com/jfreed-dev/niri-screensaver) — Idle-aware terminal screensaver for niri, driven by TerminalTextEffects, with an optional Noctalia plugin for IdleService integration.
+- [niri-screensaver](https://github.com/jfreed-dev/niri-screensaver) - Idle-aware terminal screensaver for niri, driven by TerminalTextEffects, with an optional Noctalia plugin for IdleService integration.
 ```
 
 ### Submission steps
 
 ```bash
-# 1. Fork
-gh repo fork niri-wm/awesome-niri --clone --remote
+# 1. Fork. `gh repo fork` rejects --remote when a repo arg is provided;
+#    cloning alone sets origin=fork and adds upstream=original.
+gh repo fork niri-wm/awesome-niri --clone
 cd awesome-niri
 
 # 2. Edit README.md — add the entry in the right section, alphabetical
 $EDITOR README.md
 
-# 3. Run awesome-lint locally (optional; CI will run it)
+# 3. Run awesome-lint locally. Not optional — CI runs the same rules and
+#    will block on awesome-list-item (em-dash / no-period / etc.) before
+#    a maintainer even sees the PR.
 npx awesome-lint
 
 # 4. Branch, commit, PR
