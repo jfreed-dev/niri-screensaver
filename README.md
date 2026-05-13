@@ -22,7 +22,7 @@ in swayidle.
 
 ## Layout
 
-```
+```text
 bin/
   niri-screensaver         Inner driver — runs TTE in the current terminal.
   niri-screensaver-launch  Spawns one fullscreen Alacritty per output, runs the driver inside.

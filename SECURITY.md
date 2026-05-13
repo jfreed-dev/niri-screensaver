@@ -14,7 +14,7 @@ latest minor release on `main`. Older versions are not supported.
 
 Please **do not** open a public issue for security-sensitive reports.
 
-Email **jon@freed-dev.com** with:
+Email **<jon@freed-dev.com>** with:
 
 - A description of the vulnerability and its impact
 - Steps to reproduce or a proof of concept

@@ -27,7 +27,7 @@ labels: bug
 
 ## `niri-screensaver-ctl status` output
 
-```
+```text
 <!-- paste output here -->
 ```
 

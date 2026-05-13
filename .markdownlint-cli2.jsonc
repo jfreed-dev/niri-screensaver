@@ -1,0 +1,44 @@
+{
+  // markdownlint-cli2 config — https://github.com/DavidAnson/markdownlint-cli2
+  //
+  // Pragmatic ruleset: enforce structural correctness (broken links,
+  // missing code-fence languages, bare URLs) but leave prose style alone.
+  "config": {
+    "default": true,
+
+    // Line length — prose isn't column-constrained; we hard-wrap by intent
+    // in some places and overflow in others. Not worth gating PRs on.
+    "MD013": false,
+
+    // CHANGELOG has multiple "### Added"/"### Fixed" within a single release
+    // section by convention; not worth gating PRs on.
+    "MD024": false,
+
+    // Inline HTML is fine — README uses <kbd>, <details>, <br>, etc.
+    "MD033": false,
+
+    // First line need not be h1 — CHANGELOG starts with "# Changelog" but
+    // the rule sometimes misfires on front-matter-less docs.
+    "MD041": false,
+
+    // Emphasis style mixed _italics_ and *italics* — pick neither, don't gate.
+    "MD049": false,
+
+    // Fences inside list items need indented continuation; the rule
+    // prefers blank lines but that breaks the list. Allow tight fences
+    // inside list items.
+    "MD031": { "list_items": false },
+
+    // Table column style — we use leading_and_trailing (`| col | col |`)
+    // consistently; the default auto-detects "compact" and complains.
+    "MD060": false
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    "node_modules/**",
+    // Per-user Claude Code guidance; gitignored but may exist in working tree.
+    "CLAUDE.md",
+    // Third-party logo attributions; formatting follows upstream sources.
+    "share/logos/LICENSES.md"
+  ]
+}

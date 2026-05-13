@@ -9,13 +9,14 @@
 
 SHELL := /bin/bash
 
-# Bash scripts subject to shellcheck
-BASH_SCRIPTS := bin/niri-screensaver bin/niri-screensaver-launch bin/niri-screensaver-ctl install.sh
+# Bash scripts subject to shellcheck (mirrors .github/workflows/ci.yml)
+BASH_SCRIPTS := bin/niri-screensaver bin/niri-screensaver-launch bin/niri-screensaver-ctl install.sh scripts/check-doc-links.sh scripts/json-validate.sh
 
 # Install prefix (override with: make install INSTALL_PREFIX=/usr/local)
 INSTALL_PREFIX ?= $(HOME)/.local
 
 .PHONY: help default check lint shellcheck json-validate doc-links \
+        typos markdownlint actionlint \
         health health-quick pre-commit install uninstall test effects \
         plugin-link plugin-unlink
 
@@ -25,11 +26,14 @@ help:
 	@echo "niri-screensaver — local CI/CD targets"
 	@echo ""
 	@echo "  Quality gates (match CI):"
-	@echo "    make check          shellcheck + json-validate + doc-links (== CI)"
+	@echo "    make check          run every gate (skips ones whose tool is missing)"
 	@echo "    make lint           alias for 'check'"
 	@echo "    make shellcheck     just the bash linter"
 	@echo "    make json-validate  validate every *.json in the tree"
 	@echo "    make doc-links      check relative paths in markdown resolve in-tree"
+	@echo "    make typos          spell-check (cargo install typos-cli)"
+	@echo "    make markdownlint   markdown hygiene (npm i -g markdownlint-cli2)"
+	@echo "    make actionlint     workflow hygiene (go install github.com/rhysd/actionlint/cmd/actionlint@latest)"
 	@echo ""
 	@echo "  Health checks:"
 	@echo "    make health-quick   build/code-quality checks only (no runtime)"
@@ -50,7 +54,7 @@ help:
 
 # ---------- CI parity ----------
 
-check: shellcheck json-validate doc-links
+check: shellcheck json-validate doc-links typos markdownlint actionlint
 	@echo "All checks passed."
 
 lint: check
@@ -61,13 +65,36 @@ shellcheck:
 
 json-validate:
 	@echo "[json-validate] all *.json"
-	@for f in $$(find . -name '*.json' -not -path './.git/*'); do \
-		python3 -c "import json,sys; json.load(open('$$f'))" || { echo "invalid: $$f"; exit 1; }; \
-	done
+	@bash scripts/json-validate.sh
 
 doc-links:
 	@echo "[doc-links] README.md CHANGELOG.md CONTRIBUTING.md"
 	@bash scripts/check-doc-links.sh
+
+# typos / markdownlint / actionlint skip with a hint when their tool isn't
+# installed locally — keeps `make check` runnable on a fresh clone without
+# forcing every contributor to install three extra linters. CI installs all
+# three via pinned actions, so the gates still bind on PRs.
+typos:
+	@if command -v typos >/dev/null 2>&1; then \
+		echo "[typos] running"; typos; \
+	else \
+		echo "[typos] SKIP — install: cargo install typos-cli (or download from https://github.com/crate-ci/typos/releases)"; \
+	fi
+
+markdownlint:
+	@if command -v markdownlint-cli2 >/dev/null 2>&1; then \
+		echo "[markdownlint] running"; markdownlint-cli2 '**/*.md' '#node_modules'; \
+	else \
+		echo "[markdownlint] SKIP — install: npm i -g markdownlint-cli2"; \
+	fi
+
+actionlint:
+	@if command -v actionlint >/dev/null 2>&1; then \
+		echo "[actionlint] running"; actionlint; \
+	else \
+		echo "[actionlint] SKIP — install: see https://github.com/rhysd/actionlint#installation"; \
+	fi
 
 # ---------- Health ----------
 

@@ -16,7 +16,7 @@
 
 set -uo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 prefix_re='^(bin|docs|noctalia-plugin|share|scripts|\.github)/'
 fail=0
@@ -30,7 +30,8 @@ for doc in README.md CHANGELOG.md CONTRIBUTING.md; do
         [[ -e "$path" ]] || { echo "  missing md-link: $path"; fail=1; }
     done < <(grep -oP '(?<=\]\()(?!http)[^)#]+' "$doc" | sort -u)
 
-    # Inline backtick path mention pass
+    # Inline backtick path mention pass.
+    # shellcheck disable=SC2016  # The grep pattern is regex syntax, not shell.
     while IFS= read -r token; do
         [[ "$token" == *" "*  ]] && continue
         [[ "$token" == *"*"*  ]] && continue

@@ -1,0 +1,24 @@
+# typos spell-checker — https://github.com/crate-ci/typos
+#
+# Repo baseline is clean against typos' default dictionary; this file
+# exists so contributors can drop project-specific allow-list entries
+# here as new false positives surface, rather than scattering inline
+# `spellchecker:disable` markers across the tree.
+
+[files]
+extend-exclude = [
+    "share/logos/*.txt",        # ASCII-art logos — character salad trips the dictionary
+    "noctalia-plugin/preview.png",
+    "noctalia-plugin/assets/*.svg",
+    "node_modules/**",
+    ".git/**",
+]
+
+[default.extend-identifiers]
+# Project-specific identifiers that look like typos but aren't.
+# (Add here only if the bare word would also be flagged elsewhere —
+# typos is case-sensitive for identifiers.)
+
+[default.extend-words]
+# Case-insensitive dictionary additions. Empty for now; entries get
+# added as real false positives are reported by `typos`.

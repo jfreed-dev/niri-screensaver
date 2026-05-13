@@ -7,9 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- CI: three new gates wired into `.github/workflows/ci.yml` and
+  `make check` — `typos` (spell-check, pinned to `crate-ci/typos@v1.46.1`),
+  `markdownlint-cli2` (markdown hygiene, pinned to `@v20`), and
+  `actionlint` (workflow YAML + embedded-script hygiene, pinned to
+  `v1.7.12`). Each has a Makefile target that skips with an install
+  hint when the tool isn't on `$PATH` locally, so a fresh clone still
+  runs `make check` without forcing every contributor to install three
+  extra linters. Dependabot already watches the workflows dir, so the
+  pins will float upward via PR.
+- `_typos.toml` and `.markdownlint-cli2.jsonc` — project-level config
+  for the new linters, with comments explaining each disabled rule.
+- `scripts/json-validate.sh` — extracts the inline json-validate step
+  from CI so it's shellcheck-clean and reusable from `make`.
+
+### Fixed
+
+- CI: `json-validate` step previously globbed JSON paths with
+  `for f in $(find …)` (SC2044) and `doc-links` inlined a regex that
+  shellcheck false-positived as SC2016. Both replaced by calls to
+  shipped scripts under `scripts/`, which are themselves shellcheck-gated.
+- `SECURITY.md` and `CODE_OF_CONDUCT.md`: bare-email `MD034` violations
+  fixed by wrapping the maintainer address in autolink brackets.
+- `CHANGELOG.md`: each `### Heading` now has the required blank line
+  before the first list item (`MD022`/`MD032`), so the file passes
+  markdownlint without disabling the rule.
+- `.github/ISSUE_TEMPLATE/bug_report.md`: status-output fence gains
+  an explicit `text` language tag (`MD040`).
+
 ## [0.3.0] — 2026-05-12
 
 ### Fixed
+
 - Launcher now parks the mouse pointer in the bottom-right corner after
   spawning the screensaver windows, via `wlrctl` (preferred) or `ydotool`
   if installed. Resolves the TODO `[bug] Mouse cursor handling during
@@ -19,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   one-time hint.
 
 ### Added
+
 - `.github/dependabot.yml` — weekly tracking of GitHub Actions versions
   in `.github/workflows/`. Dependabot will open PRs as referenced
   actions publish new releases, so the next Node-runtime / API
@@ -31,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   silently on every launch attempt.
 
 ### Changed
+
 - Plugin: bumped to **0.3.0** (registry submission readiness).
 - Plugin: `manifest.json` `repository` field now points to
   `noctalia-dev/noctalia-plugins` (matches the registry convention for
@@ -68,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that won't apply post-merge.
 
 ### Fixed
+
 - **Plugin bug: CLI-missing banner used `Color.mErrorContainer` and
   `Color.mOnErrorContainer`, neither of which exists in
   `noctalia-shell`'s Color singleton.** Only `mError` / `mOnError` are
@@ -128,6 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   combined variant.
 
 ### Changed
+
 - `CODE_OF_CONDUCT.md` replaced with the full Contributor Covenant v2.1
   text (was a 14-line abbreviated summary). Reports go to the maintainer
   email noted in the file.
@@ -174,6 +209,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] — 2026-05-08
 
 ### Added
+
 - `RANDOM_LOGO` config key — when `true`, the inner driver picks a different
   logo from `LOGO_DIR` before each effect cycle. `LOGO_DIR` defaults to the
   installed `share/logos/` directory and can be overridden.
@@ -194,6 +230,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per-distro install commands (Arch / Fedora / Debian).
 
 ### Changed
+
 - Plugin Connections handler in `Main.qml` now watches the correct
   `pluginSettingsChanged` signal on `pluginApi`. Previously listened for
   invented signals (`onAnyChanged`) and per-key signals on a plain JS
@@ -207,6 +244,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.` and walks nested properties).
 
 ### Fixed
+
 - Inner driver no longer dies the instant Alacritty opens. Terminals reply
   to the script's OSC/DA queries asynchronously; the first byte of those
   replies is `\e`, which the dismiss-on-key read loop interpreted as the
@@ -216,6 +254,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] — 2026-05-07
 
 ### Added
+
 - Initial release. Terminal-based screensaver for Niri driven by
   TerminalTextEffects (`tte`) and rendered in a fullscreen Alacritty
   surface. Forked from cosmic-order's screensaver component, with

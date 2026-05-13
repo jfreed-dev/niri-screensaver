@@ -46,7 +46,7 @@ community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainer at **jon@freed-dev.com**. All complaints
+reported to the project maintainer at **<jon@freed-dev.com>**. All complaints
 will be reviewed and investigated promptly and fairly.
 
 ## Attribution
