@@ -25,29 +25,36 @@ landing here makes installation a one-click flow for users.
 Match Noctalia's [registry README](https://github.com/noctalia-dev/noctalia-plugins/blob/main/README.md)
 expectations and validate against [schema.json](https://github.com/noctalia-dev/noctalia-plugins/blob/main/schema.json):
 
-- [ ] `noctalia-plugin/manifest.json` has every required key:
-      `id`, `name`, `version`, `minNoctaliaVersion`, `author`, `license`,
-      `repository`, `description`, `entryPoints`, `dependencies`,
-      `metadata`. `make health-quick` checks this.
-- [ ] `id` matches the registry directory name we'll create (`niri-screensaver`).
+- [ ] `noctalia-plugin/manifest.json` has every schema-required key:
+      `id`, `name`, `description`, `version`, `author`. Conventional
+      additions: `repository`, `license`, `minNoctaliaVersion`, `tags`,
+      `entryPoints`, `metadata`. `make health-quick` checks this.
+- [ ] `id` matches the registry directory name we'll create
+      (`niri-screensaver`) and is `[a-zA-Z\-]+`.
 - [ ] `description` is under ~100 characters.
-- [ ] `tags` are valid registry tags. Current draft:
-      `["Bar", "System", "Niri"]` — consider adding `"Utility"` to
-      improve discoverability.
-- [ ] **`preview.png` is exactly 960×540 (16:9).** Our current
-      `noctalia-plugin/preview.png` is **960×640** — must be resized
-      before submission. Memory note `recording_screensaver_gifs.md`
-      has the capture recipe; resize the cropped output to 960×540.
+- [ ] `tags` are valid registry tags. Current set:
+      `["Bar", "Utility", "Niri"]`.
+- [ ] **`preview.png` is exactly 960×540 (16:9).** Confirm with
+      `file noctalia-plugin/preview.png`. Memory note
+      `recording_screensaver_gifs.md` has the capture recipe if it
+      needs to be regenerated.
 - [ ] `noctalia-plugin/README.md` documents what the plugin does, with
       at least one screenshot (the `preview.png` is fine).
 - [ ] Tested on a Noctalia version ≥ `minNoctaliaVersion` in the
       manifest.
-- [ ] `repository` field — the registry's documented example points to
-      `noctalia-dev/noctalia-plugins`, but plugins with their own
-      upstream (like `kde-connect`) point to that upstream. Either is
-      precedented; for niri-screensaver, point to the upstream
-      (`https://github.com/jfreed-dev/niri-screensaver`) so issues land
-      in the right place.
+- [ ] **`repository` field must be exactly
+      `https://github.com/noctalia-dev/noctalia-plugins`.** The
+      registry's `check-manifest.yml` CI hard-fails any other value as
+      a high-priority issue. Upstream-project link lives in
+      `noctalia-plugin/README.md` instead.
+- [ ] QML passes the registry's `code-quality.yml` regex traps:
+      no hardcoded numeric `border|spacing|pointSize|radius|margin`
+      literals, no `console.log`, no bare `Text|Button|Checkbox|Switch`
+      (use the `N*` widgets), no `pluginApi?.tr(…) || …` fallbacks, no
+      hardcoded `text|label|description: "..."` (use `pluginApi?.tr()`).
+      Required root properties on `Main.qml`, `BarWidget.qml`,
+      `Settings.qml`, etc. — see the workflow source for the exact
+      regex per component.
 
 ### Submission steps
 
@@ -56,42 +63,60 @@ expectations and validate against [schema.json](https://github.com/noctalia-dev/
 gh repo fork noctalia-dev/noctalia-plugins --clone --remote
 cd noctalia-plugins
 
-# 2. Create the plugin directory matching the manifest 'id'
+# 2. Copy the plugin into a directory matching the manifest 'id'.
+#    The --exclude is important: noctalia-plugin/settings.json is
+#    Noctalia's runtime cache (gitignored upstream); a plain `cp -r`
+#    would silently include it and registry CI doesn't flag it.
 mkdir niri-screensaver
-cp -r ~/Repos/niri-screensaver/noctalia-plugin/. niri-screensaver/
+rsync -a --exclude='settings.json' \
+  ~/Repos/niri-screensaver/noctalia-plugin/ niri-screensaver/
 
-# 3. Verify the manifest passes the registry's schema (optional but
-#    helps catch issues before CI does)
+# 3. Verify the manifest has the schema-required keys (CI runs this
+#    against schema.json on PR open; this is a faster local check).
 python3 - <<'PY'
 import json
 m = json.load(open('niri-screensaver/manifest.json'))
-required = {'id', 'name', 'version', 'minNoctaliaVersion', 'author',
-            'license', 'repository', 'description', 'entryPoints'}
+required = {'id', 'name', 'description', 'version', 'author'}
 missing = required - m.keys()
-assert not missing, f"missing keys: {missing}"
+assert not missing, f"missing schema-required keys: {missing}"
 assert m['id'] == 'niri-screensaver'
+assert m['repository'] == 'https://github.com/noctalia-dev/noctalia-plugins', \
+    "repository must point to the registry — CI hard-fails any other value"
 print("manifest OK")
 PY
 
 # 4. Branch, commit, push, PR
 git checkout -b add-niri-screensaver
 git add niri-screensaver/
-git commit -m "Add niri-screensaver plugin"
+git commit -m "feat: add niri-screensaver plugin"
 git push -u origin add-niri-screensaver
-gh pr create --title "Add niri-screensaver plugin" \
+gh pr create --title "feat: add niri-screensaver plugin" \
   --body "$(cat <<'BODY'
+## Summary
 Adds the `niri-screensaver` plugin — an idle-aware terminal
 screensaver for niri, driven by TerminalTextEffects. Wires Noctalia's
 IdleService to a small bash CLI that spawns one fullscreen Alacritty
 per output via niri's window-rule on `app-id="niri-screensaver"`.
 
+## Features
+- Bar widget toggles the screensaver on/off, reflects running state.
+- Settings panel exposes effect filters, fade-in/out, clock, random
+  logo picker, dismiss-on-key, idle threshold.
+- 14 TTE effects pre-tuned for screensaver use; per-effect canvas
+  fitting; multi-monitor coverage.
+
+## Requirements
+- niri (the plugin shells out to `niri msg` for output enumeration).
+- The companion bash CLI (`niri-screensaver-launch`) shipped from the
+  upstream repo below.
+- TerminalTextEffects (`tte`) and Alacritty.
+
+## Links
 - Upstream: https://github.com/jfreed-dev/niri-screensaver
 - License: GPL-3.0-only
 - Min Noctalia: 4.7.0
-- Compositor: niri (the plugin shells out to `niri msg` for output
-  enumeration; not portable to other compositors)
 
-Manifest validates against schema.json. preview.png is 960x540.
+Manifest validates against schema.json; preview.png is 960×540.
 BODY
 )"
 ```
