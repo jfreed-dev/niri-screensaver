@@ -12,7 +12,7 @@ permissions:
 jobs:
   shellcheck:
     name: shellcheck (bash scripts)
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v6
       - name: Run shellcheck
@@ -27,7 +27,7 @@ jobs:
 
   json-validate:
     name: json validate (manifest, i18n)
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v6
       - name: Validate JSON files
@@ -35,7 +35,7 @@ jobs:
 
   doc-links:
     name: doc links (markdown + inline path mentions)
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v6
       - name: Check relative paths in docs resolve in-tree
@@ -43,14 +43,14 @@ jobs:
 
   typos:
     name: typos (spell check)
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v6
       - uses: crate-ci/typos@v1.46.1
 
   markdownlint:
     name: markdownlint (md hygiene)
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v6
       - uses: DavidAnson/markdownlint-cli2-action@v20
@@ -59,7 +59,7 @@ jobs:
 
   actionlint:
     name: actionlint (workflow hygiene)
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v6
       - name: Download actionlint
