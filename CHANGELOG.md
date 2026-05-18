@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-05-18
+
 ### Added
 
 - CI: three new gates wired into `.github/workflows/ci.yml` and
@@ -36,6 +38,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   markdownlint without disabling the rule.
 - `.github/ISSUE_TEMPLATE/bug_report.md`: status-output fence gains
   an explicit `text` language tag (`MD040`).
+
+### Changed
+
+- CI: all jobs moved from GitHub-hosted runners to the self-hosted
+  `spark-niri-screensaver` runner (`runs-on: [self-hosted, linux]`).
+  Cuts GitHub Actions minutes to zero for routine pushes; the runner
+  image ships `shellcheck` so the lint job no longer needs an install
+  step.
 
 ## [0.3.0] — 2026-05-12
 
