@@ -50,8 +50,6 @@ with `[bug]` are confirmed defects.
   without forking effect code.
 - **Bar-widget enrichments.** Tooltip showing "minutes until idle"; a
   right-click submenu with quick logo / effect picks.
-- **`niri-screensaver-ctl preview <effect>`.** Single-effect inline
-  preview — extension of the existing `test` subcommand.
 
 ## Ops / packaging
 

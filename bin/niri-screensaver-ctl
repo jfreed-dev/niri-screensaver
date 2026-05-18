@@ -1,7 +1,7 @@
 #!/bin/bash
 # niri-screensaver-ctl - Thin shim over niri-screensaver-launch + niri-screensaver
 #
-# Forwards launch/kill/toggle/status to the launcher and test/effects to the driver.
+# Forwards launch/kill/toggle/status to the launcher and test/preview/effects to the driver.
 # Provided for symmetry with cosmic-order's screensaver-ctl, minus the
 # swayidle/systemd/lock-command plumbing (Noctalia owns those concerns).
 # SPDX-License-Identifier: GPL-3.0-only
@@ -22,6 +22,7 @@ Commands:
     toggle           Toggle the disabled flag
     status           Show running/enabled/output state
     test [EFFECT]    Run a single TTE effect (random if omitted)
+    preview EFFECT   Preview a single named TTE effect inline
     effects          List all TTE effects
     setup            Create config dir and copy default logo
     help             Show this help
@@ -35,8 +36,8 @@ cmd="${1:-help}"
 shift 2>/dev/null || true
 
 case "$cmd" in
-    launch|kill|toggle|status) exec "$LAUNCHER" "$cmd" "$@" ;;
-    test|effects|setup)        exec "$DRIVER" "$cmd" "$@" ;;
+    launch|kill|toggle|status)     exec "$LAUNCHER" "$cmd" "$@" ;;
+    test|preview|effects|setup)    exec "$DRIVER" "$cmd" "$@" ;;
     help|-h|--help)            usage ;;
     *) echo "Unknown command: $cmd" >&2; usage; exit 1 ;;
 esac

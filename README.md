@@ -26,7 +26,7 @@ in swayidle.
 bin/
   niri-screensaver         Inner driver — runs TTE in the current terminal.
   niri-screensaver-launch  Spawns one fullscreen Alacritty per output, runs the driver inside.
-  niri-screensaver-ctl     Thin shim: launch | kill | toggle | status | test | effects.
+  niri-screensaver-ctl     Thin shim: launch | kill | toggle | status | test | preview | effects.
 share/
   alacritty-screensaver.toml  Minimal Alacritty config (black bg, no padding, hidden cursor).
   logos/                       ASCII art logos (Framework cog, CachyOS shield, combos). See `Logos` below.
@@ -122,8 +122,9 @@ niri-screensaver-ctl launch    # trigger now
 niri-screensaver-ctl kill      # stop
 niri-screensaver-ctl status    # report state
 niri-screensaver-ctl toggle    # disable / re-enable the launcher
-niri-screensaver-ctl test      # run a single random effect inline (no fullscreen)
-niri-screensaver-ctl effects   # list all TTE effects
+niri-screensaver-ctl test           # run a single random effect inline (no fullscreen)
+niri-screensaver-ctl preview rain   # preview a specific named effect inline
+niri-screensaver-ctl effects        # list all TTE effects
 ```
 
 ## Configuration

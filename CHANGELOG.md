@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `niri-screensaver-ctl preview EFFECT` — friendlier wrapper for previewing
+  a single named TTE effect inline. Same machinery as `test EFFECT`, but
+  requires an explicit effect name (use `effects` to list available names).
+  `test` keeps its existing "random if omitted" behavior.
+
 ## [0.3.1] — 2026-05-18
 
 ### Added

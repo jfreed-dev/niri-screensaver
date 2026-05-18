@@ -361,6 +361,7 @@ Terminal-based screensaver for Niri + Noctalia using TerminalTextEffects.
 Commands:
     run             Run the screensaver (default)
     test [EFFECT]   Test a specific effect (random if not specified)
+    preview EFFECT  Preview a single named effect inline (effect name required)
     effects         List available effects
     setup           Create config directory and copy default logo
     help            Show this help
@@ -411,6 +412,15 @@ main() {
             check_dependencies
             ensure_config_dir
             run_single_effect "${1:-}"
+            ;;
+        preview)
+            check_dependencies
+            ensure_config_dir
+            if [[ -z "${1:-}" ]]; then
+                log_error "preview requires an effect name (try '$(basename "$0") effects')"
+                exit 1
+            fi
+            run_single_effect "$1"
             ;;
         effects|list)
             check_dependencies
