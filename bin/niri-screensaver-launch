@@ -11,6 +11,14 @@ set -uo pipefail
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/niri-screensaver}"
 PID_FILE="${CONFIG_DIR}/screensaver.pid"
 TOGGLE_FILE="${CONFIG_DIR}/disabled"
+LAUNCH_STAMP_FILE="${CONFIG_DIR}/launch.timestamp"
+
+# Window-rule open-focused + fullscreen surface causes a Wayland focus/enter
+# event that ext-idle-notify-v1 treats as activity. Noctalia (and similar
+# idle daemons) then fire their resumeCommand within ~1s of launch, killing
+# the screensaver before it renders. Drop kill invocations that arrive
+# within this window. See issue #4.
+KILL_DEBOUNCE_SECS="${NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS:-3}"
 
 # Resolve sibling assets: installed first, then dev-checkout fallback.
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
@@ -95,6 +103,16 @@ kill_screensaver() {
     return 0
 }
 
+kill_too_soon_after_launch() {
+    [[ "$KILL_DEBOUNCE_SECS" -gt 0 ]] || return 1
+    [[ -f "$LAUNCH_STAMP_FILE" ]] || return 1
+    local stamp now
+    stamp=$(cat "$LAUNCH_STAMP_FILE" 2>/dev/null) || return 1
+    [[ "$stamp" =~ ^[0-9]+$ ]] || return 1
+    now=$(date +%s)
+    (( now - stamp < KILL_DEBOUNCE_SECS ))
+}
+
 # Park the pointer in the bottom-right corner so it doesn't sit visible on top
 # of the screensaver. Niri's cursor.hide-after-inactive-ms then hides it after
 # the configured idle window. Tries wlrctl (wlr-virtual-pointer) first since
@@ -140,6 +158,7 @@ launch_screensaver() {
 
     mkdir -p "$CONFIG_DIR"
     echo $$ > "$PID_FILE"
+    date +%s > "$LAUNCH_STAMP_FILE"
 
     local count
     count=$(count_outputs)
@@ -214,10 +233,13 @@ Commands:
     help             Show this help
 
 Environment:
-    CONFIG_DIR           Config directory (default: ~/.config/niri-screensaver)
-    NIRI_SCREENSAVER_DATA  Override data dir (alacritty config + logos)
-    ALACRITTY_CONFIG     Alacritty config file (default: <data>/alacritty-screensaver.toml)
-    SCREENSAVER_BIN      Path to inner driver (default: sibling 'niri-screensaver')
+    CONFIG_DIR                          Config directory (default: ~/.config/niri-screensaver)
+    NIRI_SCREENSAVER_DATA               Override data dir (alacritty config + logos)
+    ALACRITTY_CONFIG                    Alacritty config file (default: <data>/alacritty-screensaver.toml)
+    SCREENSAVER_BIN                     Path to inner driver (default: sibling 'niri-screensaver')
+    NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS Drop 'kill' invocations arriving within this many seconds of 'launch'
+                                        (default: 3; set to 0 to disable). Works around the Noctalia/niri
+                                        spawn-resume race documented in issue #4.
 EOF
 }
 
@@ -226,7 +248,14 @@ main() {
     shift 2>/dev/null || true
     case "$cmd" in
         launch|run|start) launch_screensaver "$@" ;;
-        kill|stop)        kill_screensaver; log_success "Screensaver stopped" ;;
+        kill|stop)
+            if kill_too_soon_after_launch; then
+                log_info "Ignoring kill within ${KILL_DEBOUNCE_SECS}s of launch (spawn/resume race — see issue #4)"
+                exit 0
+            fi
+            kill_screensaver
+            log_success "Screensaver stopped"
+            ;;
         toggle)           toggle_screensaver ;;
         status)           show_status ;;
         help|-h|--help)   usage ;;

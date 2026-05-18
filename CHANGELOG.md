@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `niri-screensaver-launch` now debounces `kill` invocations that arrive
+  within 3 seconds of `launch`. Under Noctalia (and likely other idle
+  daemons that pair a `launchCommand` with a `resumeCommand`), spawning
+  the fullscreen Alacritty triggers a Wayland focus/enter event that
+  `ext-idle-notify-v1` reports as activity — causing the resume command
+  to fire ~1 second after launch and tear the screensaver down before
+  it renders. The launcher now writes a launch timestamp and drops `kill`
+  invocations inside the debounce window. Tune via
+  `NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS` (set to `0` to disable). Fixes #4.
+
 ## [0.5.0] — 2026-05-18
 
 ### Added
