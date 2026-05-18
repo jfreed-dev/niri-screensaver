@@ -45,21 +45,22 @@ install.sh                     User-local install (defaults to ~/.local).
 | `alacritty` | yes | Host terminal for the fullscreen screensaver surface |
 | `terminaltexteffects` (`tte`) | yes | Renders the actual effects |
 | `jq` | optional | Used by the launcher to enumerate outputs |
-| `figlet` | optional | Renders the between-effects clock |
+| `figlet` | optional | Renders the between-effects clock and now-playing overlay |
+| `playerctl` | optional | Source for the now-playing track display |
 | `notify-send` (`libnotify`) | optional | Toggle / status notifications |
 
 Install the dependencies for your distro:
 
 ```bash
 # Arch / CachyOS
-paru -S python-terminaltexteffects alacritty niri jq figlet libnotify
+paru -S python-terminaltexteffects alacritty niri jq figlet libnotify playerctl
 
 # Fedora / RHEL
-sudo dnf install alacritty niri jq figlet libnotify
+sudo dnf install alacritty niri jq figlet libnotify playerctl
 pipx install terminaltexteffects
 
 # Debian / Ubuntu
-sudo apt install alacritty jq figlet libnotify-bin
+sudo apt install alacritty jq figlet libnotify-bin playerctl
 pipx install terminaltexteffects
 # (niri may need a manual install on older releases)
 ```
@@ -141,7 +142,9 @@ niri-screensaver-ctl effects        # list all TTE effects
 | `SHOW_CLOCK` | `false` | Render time between effects |
 | `CLOCK_DURATION` | `3` | Seconds to display the clock |
 | `CLOCK_FORMAT` | `%H:%M` | strftime format string |
-| `CLOCK_FONT` | _empty_ | figlet font name |
+| `CLOCK_FONT` | _empty_ | figlet font name (shared with the now-playing overlay) |
+| `SHOW_NOW_PLAYING` | `false` | Render the playerctl track title between effects (no-op if `playerctl` is missing or nothing is playing) |
+| `NOW_PLAYING_DURATION` | `3` | Seconds to display the now-playing overlay |
 | `CURSOR_HIDE` | `true` | Hide the *text* cursor (`tput civis`) |
 | `DISMISS_ON_KEY` | `true` | Any key dismisses; ESC and mouse always dismiss |
 | `RANDOM_LOGO` | `false` | When `true`, pick a random `*.txt` from `LOGO_DIR` before each effect cycle |

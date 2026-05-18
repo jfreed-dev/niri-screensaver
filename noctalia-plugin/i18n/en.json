@@ -36,6 +36,12 @@
     "clock-format": "Clock format",
     "clock-format-desc": "strftime format string. Examples: %H:%M, %I:%M %p, %a %d.",
 
+    "now-playing-section": "Now playing",
+    "show-now-playing": "Show now-playing track between effects",
+    "show-now-playing-desc": "When a playerctl-compatible player is Playing, display the current track briefly between effect cycles. Silently skips when playerctl is missing or nothing is playing.",
+    "now-playing-duration": "Now-playing duration (seconds)",
+    "now-playing-duration-desc": "How long to display the track name before the next effect.",
+
     "trigger-now": "Trigger now",
     "stop": "Stop",
 

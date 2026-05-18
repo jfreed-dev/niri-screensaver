@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Now-playing overlay. When `SHOW_NOW_PLAYING=true` and `playerctl`
+  reports a player as `Playing`, the inner driver renders the current
+  track (`artist — title`) briefly between effect cycles, using the
+  same figlet/centered-text path as the clock. Silently no-ops when
+  `playerctl` isn't installed or no player is active. New config keys:
+  `SHOW_NOW_PLAYING` (default `false`), `NOW_PLAYING_DURATION`
+  (default `3`). Plugin gains a matching "Now playing" Settings
+  section.
+- `playerctl` listed as an optional dependency in the Requirements
+  table and the per-distro install snippets.
+
+### Changed
+
+- Inner driver's figlet/plain centered-text rendering pulled out of
+  `display_clock` into a shared `render_centered_text` helper, since
+  the now-playing overlay reuses it. No user-visible change.
+
 ## [0.4.0] — 2026-05-18
 
 ### Added

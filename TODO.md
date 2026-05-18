@@ -38,9 +38,6 @@ with `[bug]` are confirmed defects.
   `if (date +%H) > 18` branch in the inner driver.
 - **Per-monitor logo.** The launcher already iterates outputs; pass
   `LOGO_FILE` per-output so different screens show different art.
-- **Now-playing overlay.** If `playerctl` is available and media is
-  playing, render the track title as a brief between-effects display.
-  Reuse the existing `figlet` clock plumbing.
 - **Sleep-on-battery threshold.** Skip launching when on battery below
   N% to save power; read `/sys/class/power_supply/BAT*/capacity`.
 - **Effect playlists.** `EFFECT_PLAYLIST` env var that cycles a

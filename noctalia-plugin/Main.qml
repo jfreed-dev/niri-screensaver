@@ -114,6 +114,8 @@ Item {
       "CLOCK_DURATION=\"" + _shEscape(s.clockDuration || 3) + "\"",
       "CLOCK_FORMAT=\"" + _shEscape(s.clockFormat) + "\"",
       "CLOCK_FONT=\"" + _shEscape(s.clockFont) + "\"",
+      "SHOW_NOW_PLAYING=\"" + bool(s.showNowPlaying) + "\"",
+      "NOW_PLAYING_DURATION=\"" + _shEscape(s.nowPlayingDuration || 3) + "\"",
       "LOGO_FILE=\"" + _shEscape(s.logoPath) + "\"",
       "CURSOR_HIDE=\"" + bool(s.cursorHide) + "\"",
       "DISMISS_ON_KEY=\"" + bool(s.dismissOnKey) + "\"",

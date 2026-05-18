@@ -34,6 +34,8 @@ ColumnLayout {
   property string editLogoDir:        cfg.logoDir        ?? defaults.logoDir        ?? ""
   property bool   editShowClock:      cfg.showClock      ?? defaults.showClock      ?? false
   property string editClockFormat:    cfg.clockFormat    ?? defaults.clockFormat    ?? "%H:%M"
+  property bool   editShowNowPlaying: cfg.showNowPlaying ?? defaults.showNowPlaying ?? false
+  property int    editNowPlayingDuration: parseInt(cfg.nowPlayingDuration ?? defaults.nowPlayingDuration ?? 3)
 
   // ----- CLI-missing banner (Main.qml runs detection on startup) -----
   readonly property var mainInstance: pluginApi?.mainInstance || null
@@ -55,6 +57,8 @@ ColumnLayout {
     pluginApi.pluginSettings.logoDir        = root.editLogoDir
     pluginApi.pluginSettings.showClock      = root.editShowClock
     pluginApi.pluginSettings.clockFormat    = root.editClockFormat
+    pluginApi.pluginSettings.showNowPlaying = root.editShowNowPlaying
+    pluginApi.pluginSettings.nowPlayingDuration = root.editNowPlayingDuration
     pluginApi.saveSettings()
     Logger.i("NiriScreensaver", "settings saved")
   }
@@ -280,6 +284,48 @@ ColumnLayout {
         text: root.editClockFormat
         defaultValue: root.defaults.clockFormat
         onEditingFinished: root.editClockFormat = text
+      }
+    }
+  }
+
+  // ----- Now playing -----
+  NBox {
+    Layout.fillWidth: true
+    Layout.preferredHeight: nowPlayingCol.implicitHeight + Style.marginM * 2
+    color: Color.mSurfaceVariant
+
+    ColumnLayout {
+      id: nowPlayingCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginM
+
+      NText {
+        text: pluginApi?.tr("settings.now-playing-section")
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      NToggle {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.show-now-playing")
+        description: pluginApi?.tr("settings.show-now-playing-desc")
+        checked: root.editShowNowPlaying
+        defaultValue: root.defaults.showNowPlaying
+        onToggled: checked => root.editShowNowPlaying = checked
+      }
+
+      NSpinBox {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.now-playing-duration")
+        description: pluginApi?.tr("settings.now-playing-duration-desc")
+        from: 1
+        to: 30
+        stepSize: 1
+        value: root.editNowPlayingDuration
+        defaultValue: root.defaults.nowPlayingDuration
+        onValueChanged: root.editNowPlayingDuration = value
       }
     }
   }

@@ -29,6 +29,8 @@
       "clockDuration": 3,
       "clockFormat": "%H:%M",
       "clockFont": "",
+      "showNowPlaying": false,
+      "nowPlayingDuration": 3,
       "logoPath": "",
       "cursorHide": true,
       "dismissOnKey": true,
