@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-18
+
 ### Added
 
 - `niri-screensaver-ctl preview EFFECT` — friendlier wrapper for previewing
@@ -287,5 +289,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `share/logos/` initial set: Framework square frame, FRAMEWORK wordmark,
   combined.
 
+[0.4.0]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.3.1...v0.4.0
 [0.2.0]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jfreed-dev/niri-screensaver/releases/tag/v0.1.0
