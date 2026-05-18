@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI: **temporary** revert from the self-hosted `spark-niri-screensaver`
+  runner back to `ubuntu-latest` for all six jobs. The self-hosted runner
+  went offline (0 runners registered); jobs were queueing indefinitely.
+  Restore `runs-on: [self-hosted, linux]` once the runner is back —
+  see commit `a53ea10`.
+
 ## [0.3.1] — 2026-05-18
 
 ### Added
