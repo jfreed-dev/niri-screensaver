@@ -55,8 +55,6 @@ with `[bug]` are confirmed defects.
 
 ## Ops / packaging
 
-- ~~Tag `v0.2.0` release on GitHub~~ — done.
-- ~~Add a screenshot or GIF demo to the README~~ — done (`docs/screensaver.gif`).
 - AUR package once the API stabilizes (depends on
   `python-terminaltexteffects`, `alacritty`, `niri`).
 
