@@ -10,11 +10,9 @@
     // in some places and overflow in others. Not worth gating PRs on.
     "MD013": false,
 
-    // CHANGELOG has the same "### Added"/"### Fixed" subheadings across
-    // multiple "## [version]" parents by convention. Keep the rule on for
-    // sibling-level duplicates (real bugs) but allow same-named children
-    // under different parents.
-    "MD024": { "siblings_only": true },
+    // CHANGELOG has multiple "### Added"/"### Fixed" within a single release
+    // section by convention (multi-wave grouping); not worth gating PRs on.
+    "MD024": false,
 
     // Inline HTML is fine — README uses <kbd>, <details>, <br>, etc.
     "MD033": false,
@@ -29,7 +27,13 @@
     // Fences inside list items need indented continuation; the rule
     // prefers blank lines but that breaks the list. Allow tight fences
     // inside list items.
-    "MD031": { "list_items": false }
+    "MD031": { "list_items": false },
+
+    // Table column style — CONTRIBUTING.md uses leading_and_trailing
+    // (`| col | col |`); the default style="consistent" / "compact"
+    // auto-detection misfires and flags them. Disable rather than
+    // pin a style and risk drift.
+    "MD060": false
   },
   "globs": ["**/*.md"],
   "ignores": [
