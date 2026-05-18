@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CI: three new gates wired into `.github/workflows/ci.yml` and
   `make check` — `typos` (spell-check, pinned to `crate-ci/typos@v1.46.1`),
-  `markdownlint-cli2` (markdown hygiene, pinned to `@v20`), and
+  `markdownlint-cli2` (markdown hygiene, pinned to `@v23`), and
   `actionlint` (workflow YAML + embedded-script hygiene, pinned to
   `v1.7.12`). Each has a Makefile target that skips with an install
   hint when the tool isn't on `$PATH` locally, so a fresh clone still
