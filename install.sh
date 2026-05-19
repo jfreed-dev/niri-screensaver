@@ -36,10 +36,12 @@ install -Dm 0644 "$REPO_DIR/share/applications/niri-screensaver.desktop" \
     "$APPS_DIR/niri-screensaver.desktop"
 
 # Best-effort cache refresh — silent no-op if the tool isn't present
-command -v gtk-update-icon-cache &>/dev/null && \
+if command -v gtk-update-icon-cache &>/dev/null; then
     gtk-update-icon-cache -q -t "${PREFIX}/share/icons/hicolor" 2>/dev/null || true
-command -v update-desktop-database &>/dev/null && \
+fi
+if command -v update-desktop-database &>/dev/null; then
     update-desktop-database -q "$APPS_DIR" 2>/dev/null || true
+fi
 
 ok "Binaries installed to $BIN_DIR"
 ok "Assets installed to $DATA_DIR"
