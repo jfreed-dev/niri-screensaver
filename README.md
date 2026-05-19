@@ -70,16 +70,36 @@ API's `tr()` translation helper and Tabler icon names).
 
 ## Install
 
+### Arch / CachyOS (AUR)
+
+```bash
+yay -S niri-screensaver         # stable, tracks tagged releases
+# or
+yay -S niri-screensaver-git     # tracks main HEAD
+```
+
+Substitute `paru` / `pikaur` / your AUR helper of choice. Either package
+installs the bash CLI to `/usr/bin`, shared assets to
+`/usr/share/niri-screensaver/`, the `.desktop` entry and hicolor icon
+to the standard XDG paths, and prints a post-install message with the
+remaining wire-up steps (niri window-rule, Noctalia plugin symlink).
+
+The two packages `provides`/`conflicts` each other — install one or the
+other, not both.
+
+### Other distros / from source
+
 ```bash
 ./install.sh                             # installs into ~/.local
 INSTALL_PREFIX=/usr/local ./install.sh   # system-wide
 ```
 
 This deploys the three `bin/` scripts and the `share/` assets (Alacritty
-config + logos). It does **not** install the niri window-rule or the
-Noctalia plugin — those are separate steps below.
+config + logos + `.desktop` entry + hicolor icon). It does **not**
+install the niri window-rule or the Noctalia plugin — those are separate
+steps below.
 
-Verify with:
+### Verify
 
 ```bash
 niri-screensaver-ctl status
