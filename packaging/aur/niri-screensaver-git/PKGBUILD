@@ -1,4 +1,4 @@
-# Maintainer: Jonathan Freed <jon@freed.dev>
+# Maintainer: Jonathan Freed <jon at freed dot dev>
 pkgname=niri-screensaver-git
 _pkgname=niri-screensaver
 pkgver=0.5.1.r4.ga8a0eea

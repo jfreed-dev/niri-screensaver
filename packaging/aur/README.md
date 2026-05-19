@@ -38,12 +38,16 @@ cp packaging/aur/niri-screensaver/{PKGBUILD,niri-screensaver.install,LICENSE} \
    /tmp/aur-stable/
 cd /tmp/aur-stable
 cat > .gitignore <<'EOF'
-pkg/
-src/
-*.pkg.tar.*
-*.src.tar.*
-*.tar.gz
-*.log
+# Whitelist: ignore everything by default; opt files in explicitly.
+# Per the AUR wiki recommendation — anything new in the dir is
+# ignored unless added here, so makepkg artifacts can never sneak in.
+*
+!.gitignore
+!PKGBUILD
+!.SRCINFO
+!*.install
+!LICENSE
+!*.patch
 EOF
 makepkg --printsrcinfo > .SRCINFO
 git add .gitignore LICENSE PKGBUILD .SRCINFO niri-screensaver.install
@@ -78,6 +82,13 @@ of those during a local test build and they'll otherwise be staged
 on the next `git add -A`. From the wiki: *"The AUR should not
 contain the binary tarball created by makepkg, nor should it contain
 the filelist."*
+
+The pattern above is a **whitelist** (per the wiki recommendation):
+ignore everything, then explicitly re-include the small set of files
+that belong in the AUR repo. If a future change adds a new file type
+(say, `niri-screensaver.sig` for a signed source release), it won't
+land in the AUR repo until you add a matching `!` line — fail-closed
+beats fail-open here.
 
 ### Why the `LICENSE` file
 
