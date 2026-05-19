@@ -29,6 +29,9 @@
     "random-logo-desc": "Pick a different logo from the Logo directory before each effect cycle.",
     "logo-dir": "Logo directory",
     "logo-dir-desc": "Override the bundled logo directory. Leave empty to use the installed share/logos/.",
+    "logo-path": "Logo file",
+    "logo-path-desc": "Pick a specific logo to display. \"Default\" lets the driver seed the bundled default. Disabled when Random is on.",
+    "logo-path-default": "Default (use seeded logo)",
 
     "clock-section": "Clock",
     "show-clock": "Show clock between effects",

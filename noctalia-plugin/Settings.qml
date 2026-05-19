@@ -6,6 +6,7 @@
 // the plugin API. This matches the noctalia-plugins AGENTS.md convention.
 //
 // SPDX-License-Identifier: GPL-3.0-only
+import Qt.labs.folderlistmodel
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -32,6 +33,15 @@ ColumnLayout {
   property string editFadeOutEffect:  cfg.fadeOutEffect  ?? defaults.fadeOutEffect  ?? ""
   property bool   editRandomLogo:     cfg.randomLogo     ?? defaults.randomLogo     ?? false
   property string editLogoDir:        cfg.logoDir        ?? defaults.logoDir        ?? ""
+  property string editLogoPath:       cfg.logoPath       ?? defaults.logoPath       ?? ""
+
+  // Effective logo directory for the file dropdown: user override wins, otherwise
+  // whichever bash DEFAULT_LOGO_CANDIDATES dir actually exists. Filled by the
+  // detection Process below; empty until that returns.
+  property string detectedSystemLogoDir: ""
+  readonly property string effectiveLogoDir: (editLogoDir && editLogoDir !== "")
+    ? editLogoDir
+    : detectedSystemLogoDir
   property bool   editShowClock:      cfg.showClock      ?? defaults.showClock      ?? false
   property string editClockFormat:    cfg.clockFormat    ?? defaults.clockFormat    ?? "%H:%M"
   property bool   editShowNowPlaying: cfg.showNowPlaying ?? defaults.showNowPlaying ?? false
@@ -55,6 +65,7 @@ ColumnLayout {
     pluginApi.pluginSettings.fadeOutEffect  = root.editFadeOutEffect
     pluginApi.pluginSettings.randomLogo     = root.editRandomLogo
     pluginApi.pluginSettings.logoDir        = root.editLogoDir
+    pluginApi.pluginSettings.logoPath       = root.editLogoPath
     pluginApi.pluginSettings.showClock      = root.editShowClock
     pluginApi.pluginSettings.clockFormat    = root.editClockFormat
     pluginApi.pluginSettings.showNowPlaying = root.editShowNowPlaying
@@ -246,6 +257,17 @@ ColumnLayout {
         defaultValue: root.defaults.logoDir
         onEditingFinished: root.editLogoDir = text
       }
+
+      NComboBox {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.logo-path")
+        description: pluginApi?.tr("settings.logo-path-desc")
+        model: logoOptions
+        currentKey: root.editLogoPath
+        defaultValue: root.defaults.logoPath
+        enabled: !root.editRandomLogo
+        onSelected: key => root.editLogoPath = key
+      }
     }
   }
 
@@ -369,5 +391,64 @@ ColumnLayout {
     onExited: function (code) {
       if (code !== 0) Logger.w("NiriScreensaver", "stop (Settings) exited with code", code)
     }
+  }
+
+  // ---- Logo file dropdown plumbing ----
+  //
+  // Detect the installed share/logos/ at startup by mirroring the bash
+  // DEFAULT_LOGO_CANDIDATES list, then watch that dir (or the user's logoDir
+  // override) via FolderListModel. The combobox's model is a ListModel rebuilt
+  // from the folder model so we can prepend a "Default" entry and append any
+  // out-of-dir editLogoPath the user may already have set.
+  Process {
+    id: logoDirDetectProcess
+    stdout: StdioCollector {}
+    onExited: function (code) {
+      if (code !== 0) {
+        Logger.w("NiriScreensaver", "logo dir detection exited with code", code)
+        return
+      }
+      var p = String(stdout.text).trim()
+      if (p !== "") root.detectedSystemLogoDir = p
+    }
+  }
+
+  FolderListModel {
+    id: logoFolderModel
+    folder: root.effectiveLogoDir ? ("file://" + root.effectiveLogoDir) : ""
+    nameFilters: ["*.txt"]
+    showDirs: false
+    showHidden: false
+    sortField: FolderListModel.Name
+    onCountChanged: root._rebuildLogoOptions()
+    onStatusChanged: {
+      if (status === FolderListModel.Ready) root._rebuildLogoOptions()
+    }
+  }
+
+  ListModel { id: logoOptions }
+
+  function _rebuildLogoOptions() {
+    logoOptions.clear()
+    logoOptions.append({key: "", name: pluginApi?.tr("settings.logo-path-default") || "(default)"})
+    var seen = {"": true}
+    for (var i = 0; i < logoFolderModel.count; i++) {
+      var fileName = String(logoFolderModel.get(i, "fileName"))
+      var filePath = String(logoFolderModel.get(i, "filePath"))
+      logoOptions.append({key: filePath, name: fileName})
+      seen[filePath] = true
+    }
+    if (root.editLogoPath && !seen[root.editLogoPath]) {
+      logoOptions.append({key: root.editLogoPath, name: root.editLogoPath})
+    }
+  }
+
+  onEditLogoPathChanged: _rebuildLogoOptions()
+
+  Component.onCompleted: {
+    logoDirDetectProcess.command = ["sh", "-c",
+      'for d in "$HOME/.local/share/niri-screensaver/logos" "/usr/share/niri-screensaver/logos"; do [ -d "$d" ] && echo "$d" && exit 0; done']
+    logoDirDetectProcess.running = true
+    _rebuildLogoOptions()
   }
 }

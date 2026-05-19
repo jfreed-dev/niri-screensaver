@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Noctalia plugin: dropdown selector for the logo file in the Logo
+  settings section. Lists `*.txt` files from the effective logo
+  directory (the `logoDir` override if set, else the installed
+  `share/logos/`) and auto-refreshes when files are added or removed
+  — no Noctalia restart needed. Disabled when "Random logo per cycle"
+  is on, since the random picker overrides any specific selection.
+  Previously the `logoPath` setting had no UI and was only editable by
+  hand-editing the Noctalia settings JSON.
+
+### Changed
+
+- Default seeded logo is now `niri-name-with-icon.txt` (was
+  `framework-name-with-icon.txt`). Only affects fresh installs where
+  `~/.config/niri-screensaver/logo.txt` does not yet exist; existing
+  installs keep whatever logo was previously copied. To pick up the new
+  default, delete `~/.config/niri-screensaver/logo.txt` and re-run
+  `niri-screensaver-ctl` (or symlink any other logo from
+  `share/logos/` — all are still installed).
+
 ## [0.5.6] — 2026-05-18
 
 ### Changed
