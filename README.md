@@ -126,21 +126,28 @@ screensaver in Noctalia's `IdleService` when enabled.
 > plugin's bar widget (custom monitor-with-image icon, far left of the
 > tray cluster) launches the screensaver on click.
 
-### Option A — Symlink the AUR-shipped plugin (Arch / CachyOS, recommended)
+### Option A — Copy the AUR-shipped plugin (Arch / CachyOS, recommended)
 
 If you installed via the AUR package above, the plugin source is already
-on disk at `/usr/share/niri-screensaver/noctalia-plugin/`. Symlink it
-into Noctalia's per-user plugin dir:
+on disk at `/usr/share/niri-screensaver/noctalia-plugin/`. Copy it into
+Noctalia's per-user plugin dir:
 
 ```bash
 mkdir -p ~/.config/noctalia/plugins
-ln -sfn /usr/share/niri-screensaver/noctalia-plugin \
-        ~/.config/noctalia/plugins/niri-screensaver
+cp -r /usr/share/niri-screensaver/noctalia-plugin \
+      ~/.config/noctalia/plugins/niri-screensaver
 ```
 
-Then enable it in **Noctalia → Settings → Plugins**. Future `yay -Syu`
-updates flow into the symlink target automatically — no separate plugin
-update step.
+Then enable it in **Noctalia → Settings → Plugins**.
+
+> **Why `cp -r` and not `ln -sfn`** — Noctalia writes plugin settings
+> back into the plugin dir on every toggle in the Settings tab. The
+> AUR-shipped tree under `/usr/share/` is root-owned, so a symlinked
+> plugin loads fine but silently fails to persist any user-changed
+> settings (defaults always come back on Noctalia restart). The cost
+> of using `cp -r` is that plugin updates from `pacman -Syu` don't
+> auto-flow — re-run the `cp -r` after each upgrade if you want the
+> latest plugin code.
 
 ### Option B — Install from the Noctalia plugin registry (any distro)
 

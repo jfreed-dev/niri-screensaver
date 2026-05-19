@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] — 2026-05-18
+
+### Fixed
+
+- AUR `.install` post-install messages and the README "Wire it into
+  Noctalia" Option A now recommend `cp -r` instead of `ln -sfn` for
+  the plugin into `~/.config/noctalia/plugins/niri-screensaver`. With
+  a symlink, the plugin loads fine, but Noctalia's
+  `PluginService.savePluginSettings()` writes via `sh -c "mkdir -p '<dir>'
+  && cat > '<settings.json>' << HEREDOC ..."`, and that `cat >` fails
+  with permission denied because `/usr/share/niri-screensaver/noctalia-plugin/`
+  is `root:root 755`. The write is fire-and-forget via
+  `Quickshell.execDetached`, so the user sees no error — they just
+  notice their plugin Settings changes silently revert on Noctalia
+  restart. Caught by an end-to-end install test on a fresh AUR install.
+  Tradeoff of `cp -r` is that plugin updates from `pacman -Syu` don't
+  auto-flow into the user copy; the new note in both the post-install
+  message and the README tells users to re-run `cp -r` after upgrades.
+
 ## [0.5.4] — 2026-05-18
 
 ### Changed
@@ -403,6 +422,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `share/logos/` initial set: Framework square frame, FRAMEWORK wordmark,
   combined.
 
+[0.5.5]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.1...v0.5.2
