@@ -1,0 +1,47 @@
+name: slack-ci-failure
+
+# Event-driven alert: posts to #niri-screensaver whenever the CI
+# workflow fails on main. GitHub already emails the maintainer on
+# Actions failures, but Slack surfaces it where they're already
+# looking.
+#
+# Conclusions other than 'failure' (success, cancelled, skipped) are
+# ignored.
+#
+# Pairs with slack-daily-digest.yml (cron-based maintenance digest).
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  alert:
+    name: post CI failure to Slack
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST to Slack webhook
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          WF_TITLE: ${{ github.event.workflow_run.display_title }}
+          WF_SHA: ${{ github.event.workflow_run.head_sha }}
+          WF_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+          short_sha="${WF_SHA:0:8}"
+
+          text=$(printf "%s\n" \
+            ":rotating_light: *niri-screensaver CI failed on main*" \
+            "*Workflow:* ${WF_NAME}" \
+            "*Commit:* \`${short_sha}\` — ${WF_TITLE}" \
+            "<${WF_URL}|View run>")
+
+          jq -n --arg text "$text" "{text: \$text}" | \
+            curl -sSf -X POST -H "Content-Type: application/json" \
+                 --data-binary @- "$SLACK_WEBHOOK_URL"

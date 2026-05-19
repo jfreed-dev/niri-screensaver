@@ -1,0 +1,95 @@
+name: slack-daily-digest
+
+# Daily AUR + upstream-release digest posted to #niri-screensaver.
+# Polls AUR RPC for both packages (pkgver, votes, OutOfDate flag)
+# and upstream GitHub repos for latest releases. One Slack message
+# per day; no state-tracking, so the user scans the digest each
+# morning rather than diff-reading individual alerts.
+#
+# Pairs with slack-ci-failure.yml (event-driven on CI failures).
+#
+# Requires the SLACK_WEBHOOK_URL repo secret pointing at an Incoming
+# Webhook URL for the #niri-screensaver channel.
+
+on:
+  schedule:
+    - cron: '0 14 * * *'  # 14:00 UTC daily (~9am ET / 7am MT)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    name: post AUR + upstream digest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compose and post digest
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          aur_line() {
+            local pkg="$1"
+            local data
+            data=$(curl -sSLf "https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=${pkg}")
+            local ver votes pop ood
+            ver=$(jq -r ".results[0].Version" <<<"$data")
+            votes=$(jq -r ".results[0].NumVotes" <<<"$data")
+            pop=$(jq -r ".results[0].Popularity" <<<"$data")
+            ood=$(jq -r ".results[0].OutOfDate" <<<"$data")
+            local ood_str
+            if [ "$ood" = "null" ]; then
+              ood_str=":white_check_mark: clean"
+            else
+              ood_str=":triangular_flag_on_post: flagged $(date -u -d "@$ood" +%Y-%m-%d)"
+            fi
+            printf "• \`%s\` — \`%s\`, %s votes, popularity %s, OOD: %s" \
+              "$pkg" "$ver" "$votes" "$pop" "$ood_str"
+          }
+
+          upstream_line() {
+            local repo="$1" label="$2"
+            local data tag pub days
+            data=$(gh api "repos/${repo}/releases/latest" 2>/dev/null || true)
+            if [ -z "$data" ] || [ "$data" = "null" ]; then
+              tag=$(gh api "repos/${repo}/tags?per_page=1" --jq ".[0].name" 2>/dev/null || echo "?")
+              printf "• %s: \`%s\` (no release, latest tag only)" "$label" "$tag"
+              return
+            fi
+            tag=$(jq -r ".tag_name" <<<"$data")
+            pub=$(jq -r ".published_at" <<<"$data")
+            days=$(( ($(date -u +%s) - $(date -u -d "$pub" +%s)) / 86400 ))
+            printf "• %s: \`%s\` (%s days ago)" "$label" "$tag" "$days"
+          }
+
+          aur_stable=$(aur_line niri-screensaver)
+          aur_git=$(aur_line niri-screensaver-git)
+          up_niri=$(upstream_line YaLTeR/niri niri)
+          up_tte=$(upstream_line ChrisBuilds/terminaltexteffects tte)
+          up_noctalia=$(upstream_line noctalia-dev/noctalia-shell noctalia-shell)
+          up_alacritty=$(upstream_line alacritty/alacritty alacritty)
+
+          text=$(printf "%s\n" \
+            ":wave: *Daily niri-screensaver maintenance digest*" \
+            "" \
+            "*AUR packages:*" \
+            "${aur_stable}" \
+            "${aur_git}" \
+            "" \
+            "*Upstream releases:*" \
+            "${up_niri}" \
+            "${up_tte}" \
+            "${up_noctalia}" \
+            "${up_alacritty}" \
+            "" \
+            ":link: <https://aur.archlinux.org/packages/niri-screensaver|stable> | <https://aur.archlinux.org/packages/niri-screensaver-git|-git>")
+
+          echo "--- payload preview ---"
+          printf "%s\n" "$text"
+
+          jq -n --arg text "$text" "{text: \$text}" | \
+            curl -sSf -X POST -H "Content-Type: application/json" \
+                 --data-binary @- "$SLACK_WEBHOOK_URL"
