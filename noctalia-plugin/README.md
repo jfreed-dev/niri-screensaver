@@ -19,7 +19,10 @@ and rendered in a fullscreen Alacritty surface.
 - **Bar widget**: click to trigger; right-click for stop / toggle enabled /
   open settings. Recolors to follow the active Noctalia theme.
 - **Settings tab** for idle threshold, effect include/exclude lists,
-  fade-in/out, clock, random-logo picker, and a manual trigger/stop pair.
+  fade-in/out **dropdowns** populated from `niri-screensaver-ctl effects`,
+  a **logo file dropdown** that auto-refreshes from your logo directory,
+  a **folder picker** for the logo directory itself, plus clock, now-
+  playing, and a manual trigger/stop pair.
 - **IPC surface** `plugin:niri-screensaver` exposing `launch`, `kill`,
   `toggle` — bind to niri keybinds via
   `qs ipc call plugin:niri-screensaver launch`.
@@ -55,25 +58,74 @@ Each field in the plugin's Settings tab maps to a key in the shell-format
 config the bash CLI reads. Changing a value writes the file on save and
 re-syncs the idle hook.
 
-| UI label | Shell key | Default |
-|---|---|---|
-| Enabled | (registers an entry in `Settings.data.idle.customCommands`) | `true` |
-| Idle threshold (seconds) | sets `timeout` of that customCommand | `300` |
-| Include effects (CSV) | `INCLUDE_EFFECTS` | _empty_ |
-| Exclude effects (CSV) | `EXCLUDE_EFFECTS` | `dev_worm` |
-| Fade-in effect | `FADE_IN_EFFECT` | _empty_ |
-| Fade-out effect | `FADE_OUT_EFFECT` | _empty_ |
-| Random logo per cycle | `RANDOM_LOGO` | `false` |
-| Logo directory | `LOGO_DIR` | _empty_ |
-| Show clock between effects | `SHOW_CLOCK` | `false` |
-| Clock format (strftime) | `CLOCK_FORMAT` | `%H:%M` |
-| Trigger now | (runs `launcherCommand`) | `niri-screensaver-launch launch` |
-| Stop | (runs `killCommand`) | `niri-screensaver-launch kill` |
+| UI label | Widget | Shell key | Default |
+|---|---|---|---|
+| Enabled | toggle | (idle customCommands entry) | `true` |
+| Idle threshold (seconds) | spinbox | customCommand `timeout` | `300` |
+| Logo file | dropdown | `LOGO_FILE` | _empty_ |
+| Random logo per cycle | toggle | `RANDOM_LOGO` | `false` |
+| Logo directory | text + Browse | `LOGO_DIR` | _empty_ |
+| Include effects (CSV) | text | `INCLUDE_EFFECTS` | _empty_ |
+| Exclude effects (CSV) | text | `EXCLUDE_EFFECTS` | `dev_worm` |
+| Fade-in effect | dropdown | `FADE_IN_EFFECT` | _empty_ |
+| Fade-out effect | dropdown | `FADE_OUT_EFFECT` | _empty_ |
+| Show clock between effects | toggle | `SHOW_CLOCK` | `false` |
+| Clock format (strftime) | text | `CLOCK_FORMAT` | `%H:%M` |
+| Show now-playing track | toggle | `SHOW_NOW_PLAYING` | `false` |
+| Now-playing duration (s) | spinbox | `NOW_PLAYING_DURATION` | `3` |
+| Trigger now | button | (runs `launcherCommand`) | `niri-screensaver-launch launch` |
+| Stop | button | (runs `killCommand`) | `niri-screensaver-launch kill` |
+
+The "Logo file" and fade-effect dropdowns are populated at runtime:
+the logo list watches your logo directory (`LOGO_DIR` override or the
+installed `share/logos/`) and auto-refreshes when files appear or
+disappear; the fade lists come from `niri-screensaver-ctl effects`.
 
 Settings not surfaced in the UI (`FRAME_RATE`, `CLOCK_DURATION`,
 `CLOCK_FONT`, `CURSOR_HIDE`, `DISMISS_ON_KEY`) can be edited directly in
 `~/.config/niri-screensaver/config` — they round-trip through the plugin on
 next reload.
+
+## Logos
+
+The "Logo file" dropdown lists every `.txt` in your active logo
+directory and auto-refreshes when files appear or disappear — no
+Noctalia reload needed. The list is built from:
+
+1. The `LOGO_DIR` override if you set one (use the Browse button next
+   to "Logo directory" to pick it visually).
+2. Otherwise the installed system path: `/usr/share/niri-screensaver/logos/`
+   (AUR install) or `~/.local/share/niri-screensaver/logos/` (running
+   `./install.sh` from the repo).
+
+The first option in the dropdown ("Default") clears the explicit logo
+path so the bash driver re-applies its built-in seed
+(`niri-name-with-icon.txt`).
+
+### Creating your own
+
+Drop a UTF-8 `.txt` file into your logo directory and it'll show up
+in the dropdown the next time the panel renders. Short version:
+
+- **Size:** keep within ~40–60 columns wide so it doesn't wrap on
+  narrow terminals; height is forgiving.
+- **Layout:** TTE centers the entire file as one bounding box. Trailing
+  whitespace on lines shifts the visual center off — strip it. Blank
+  lines at top/bottom add vertical padding.
+- **Characters:** block elements (`█ ▓ ▒ ░`) and box-drawing render
+  cleanest across monospace fonts; ANSI Shadow wordmarks (try
+  `figlet -f "ANSI Shadow"` or [patorjk.com/software/taag/](https://patorjk.com/software/taag/))
+  look polished out of the box.
+- **Preview** before committing:
+
+  ```bash
+  LOGO_FILE=~/Downloads/mylogo.txt niri-screensaver-ctl test
+  ```
+
+Full guide with image-to-ASCII recipes (`jp2a`, `chafa`), font sources,
+and a sizing reference table:
+[Creating your own](https://github.com/jfreed-dev/niri-screensaver#creating-your-own)
+in the upstream README.
 
 ## License
 

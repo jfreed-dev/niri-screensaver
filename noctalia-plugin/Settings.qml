@@ -159,6 +159,60 @@ ColumnLayout {
     }
   }
 
+  // ----- Logo -----
+  NBox {
+    Layout.fillWidth: true
+    Layout.preferredHeight: logoCol.implicitHeight + Style.marginM * 2
+    color: Color.mSurfaceVariant
+
+    ColumnLayout {
+      id: logoCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginM
+
+      NText {
+        text: pluginApi?.tr("settings.logo-section")
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      NComboBox {
+        Layout.fillWidth: true
+        minimumWidth: 320
+        label: pluginApi?.tr("settings.logo-path")
+        description: pluginApi?.tr("settings.logo-path-desc")
+        model: logoOptions
+        currentKey: root.editLogoPath
+        defaultValue: root.defaults.logoPath
+        enabled: !root.editRandomLogo
+        onSelected: key => root.editLogoPath = key
+      }
+
+      NToggle {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.random-logo")
+        description: pluginApi?.tr("settings.random-logo-desc")
+        checked: root.editRandomLogo
+        defaultValue: root.defaults.randomLogo
+        onToggled: checked => root.editRandomLogo = checked
+      }
+
+      NTextInputButton {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.logo-dir")
+        description: pluginApi?.tr("settings.logo-dir-desc")
+        placeholderText: pluginApi?.tr("settings.placeholder.logo-dir")
+        text: root.editLogoDir
+        buttonIcon: "filepicker-folder"
+        buttonTooltip: pluginApi?.tr("settings.logo-dir-browse")
+        onInputEditingFinished: root.editLogoDir = text
+        onButtonClicked: logoDirPicker.openFilePicker()
+      }
+    }
+  }
+
   // ----- Effects -----
   NBox {
     Layout.fillWidth: true
@@ -198,75 +252,26 @@ ColumnLayout {
         onEditingFinished: root.editExcludeEffects = text
       }
 
-      NTextInput {
+      NComboBox {
         Layout.fillWidth: true
+        minimumWidth: 280
         label: pluginApi?.tr("settings.fade-in")
         description: pluginApi?.tr("settings.fade-in-desc")
-        placeholderText: pluginApi?.tr("settings.placeholder.fade-in")
-        text: root.editFadeInEffect
+        model: effectOptions
+        currentKey: root.editFadeInEffect
         defaultValue: root.defaults.fadeInEffect
-        onEditingFinished: root.editFadeInEffect = text
-      }
-
-      NTextInput {
-        Layout.fillWidth: true
-        label: pluginApi?.tr("settings.fade-out")
-        description: pluginApi?.tr("settings.fade-out-desc")
-        placeholderText: pluginApi?.tr("settings.placeholder.fade-out")
-        text: root.editFadeOutEffect
-        defaultValue: root.defaults.fadeOutEffect
-        onEditingFinished: root.editFadeOutEffect = text
-      }
-    }
-  }
-
-  // ----- Logo -----
-  NBox {
-    Layout.fillWidth: true
-    Layout.preferredHeight: logoCol.implicitHeight + Style.marginM * 2
-    color: Color.mSurfaceVariant
-
-    ColumnLayout {
-      id: logoCol
-      anchors.fill: parent
-      anchors.margins: Style.marginM
-      spacing: Style.marginM
-
-      NText {
-        text: pluginApi?.tr("settings.logo-section")
-        pointSize: Style.fontSizeL
-        font.weight: Style.fontWeightBold
-        color: Color.mOnSurface
-      }
-
-      NToggle {
-        Layout.fillWidth: true
-        label: pluginApi?.tr("settings.random-logo")
-        description: pluginApi?.tr("settings.random-logo-desc")
-        checked: root.editRandomLogo
-        defaultValue: root.defaults.randomLogo
-        onToggled: checked => root.editRandomLogo = checked
-      }
-
-      NTextInput {
-        Layout.fillWidth: true
-        label: pluginApi?.tr("settings.logo-dir")
-        description: pluginApi?.tr("settings.logo-dir-desc")
-        placeholderText: pluginApi?.tr("settings.placeholder.logo-dir")
-        text: root.editLogoDir
-        defaultValue: root.defaults.logoDir
-        onEditingFinished: root.editLogoDir = text
+        onSelected: key => root.editFadeInEffect = key
       }
 
       NComboBox {
         Layout.fillWidth: true
-        label: pluginApi?.tr("settings.logo-path")
-        description: pluginApi?.tr("settings.logo-path-desc")
-        model: logoOptions
-        currentKey: root.editLogoPath
-        defaultValue: root.defaults.logoPath
-        enabled: !root.editRandomLogo
-        onSelected: key => root.editLogoPath = key
+        minimumWidth: 280
+        label: pluginApi?.tr("settings.fade-out")
+        description: pluginApi?.tr("settings.fade-out-desc")
+        model: effectOptions
+        currentKey: root.editFadeOutEffect
+        defaultValue: root.defaults.fadeOutEffect
+        onSelected: key => root.editFadeOutEffect = key
       }
     }
   }
@@ -393,6 +398,51 @@ ColumnLayout {
     }
   }
 
+  // ---- Logo directory picker popup ----
+  NFilePicker {
+    id: logoDirPicker
+    title: pluginApi?.tr("settings.logo-dir-picker-title") || "Pick a logo directory"
+    selectionMode: "folders"
+    initialPath: (root.editLogoDir && root.editLogoDir !== "")
+      ? root.editLogoDir
+      : (root.detectedSystemLogoDir || (Quickshell.env("HOME") + "/.local/share/niri-screensaver/logos"))
+    onAccepted: paths => {
+      if (paths && paths.length > 0) root.editLogoDir = paths[0]
+    }
+  }
+
+  // ---- TTE effect dropdown (fade-in / fade-out) plumbing ----
+  //
+  // Shells out to `niri-screensaver-ctl effects` and parses the unique
+  // names out of the column-formatted output. The list feeds both fade
+  // comboboxes; an empty key ("(none)") maps to no fade.
+  Process {
+    id: effectsDetectProcess
+    stdout: StdioCollector {}
+    onExited: function (code) {
+      if (code !== 0) {
+        Logger.w("NiriScreensaver", "effects detection exited with code", code)
+        return
+      }
+      var text = String(stdout.text).trim()
+      if (!text) return
+      var seen = {}
+      var names = text.split(/\s+/).filter(function (s) {
+        if (!s || seen[s]) return false
+        seen[s] = true
+        return true
+      })
+      names.sort()
+      effectOptions.clear()
+      effectOptions.append({key: "", name: pluginApi?.tr("settings.effect-none") || "(none)"})
+      for (var i = 0; i < names.length; i++) {
+        effectOptions.append({key: names[i], name: names[i]})
+      }
+    }
+  }
+
+  ListModel { id: effectOptions }
+
   // ---- Logo file dropdown plumbing ----
   //
   // Detect the installed share/logos/ at startup by mirroring the bash
@@ -435,11 +485,13 @@ ColumnLayout {
     for (var i = 0; i < logoFolderModel.count; i++) {
       var fileName = String(logoFolderModel.get(i, "fileName"))
       var filePath = String(logoFolderModel.get(i, "filePath"))
-      logoOptions.append({key: filePath, name: fileName})
+      var displayName = fileName.replace(/\.txt$/i, "")
+      logoOptions.append({key: filePath, name: displayName})
       seen[filePath] = true
     }
     if (root.editLogoPath && !seen[root.editLogoPath]) {
-      logoOptions.append({key: root.editLogoPath, name: root.editLogoPath})
+      var orphanName = root.editLogoPath.split("/").pop().replace(/\.txt$/i, "")
+      logoOptions.append({key: root.editLogoPath, name: orphanName})
     }
   }
 
@@ -450,5 +502,12 @@ ColumnLayout {
       'for d in "$HOME/.local/share/niri-screensaver/logos" "/usr/share/niri-screensaver/logos"; do [ -d "$d" ] && echo "$d" && exit 0; done']
     logoDirDetectProcess.running = true
     _rebuildLogoOptions()
+
+    // Seed the "(none)" entry so the comboboxes have something to show
+    // before the effects-detection Process returns.
+    effectOptions.append({key: "", name: pluginApi?.tr("settings.effect-none") || "(none)"})
+    effectsDetectProcess.command = ["sh", "-c",
+      "niri-screensaver-ctl effects 2>/dev/null | tail -n +3 | tr -s ' \\t' '\\n' | grep -v '^$'"]
+    effectsDetectProcess.running = true
   }
 }

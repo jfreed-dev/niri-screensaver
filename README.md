@@ -266,14 +266,38 @@ Per-file attribution, licensing, and trademark notes are in
 
 Drop any UTF-8 text file into `~/.local/share/niri-screensaver/logos/`
 (or `share/logos/` in the repo) and point `LOGO_FILE` at it — or pick
-it from the Noctalia plugin's logo dropdown, which auto-refreshes when
-files appear in that directory.
+it from the Noctalia plugin's logo dropdown (which auto-refreshes when
+files appear in that directory). The plugin's Logo directory field also
+has a Browse button if you want to point it at a different folder of
+`.txt` files.
 
-**Sizing.** Logos render as-is at the center of each output, so plan
-for the narrowest terminal you'll run on. The shipped logos stay within
-~40–60 columns wide; go much wider and lines will wrap on smaller
-monitors. Height is less constrained — `niri-name-with-icon.txt` is 49
-lines and renders fine at 1080p.
+**Size.** Logos render as-is, no rescaling, so plan for the narrowest
+terminal you'll run on. The shipped logos stay within ~40–60 columns
+wide; go much wider and lines will wrap on smaller monitors. Height is
+forgiving — `niri-name-with-icon.txt` is 49 lines and renders fine at
+1080p. Useful reference points:
+
+| Logo file | Width × height |
+|---|---|
+| `framework-icon-small.txt` | 24 × 13 |
+| `framework-icon.txt` | 40 × 21 |
+| `niri-name-with-icon.txt` | 40 × 49 |
+| `cachyos-name.txt` | 60 × 9 |
+
+**Layout.** TTE centers the entire block (the full bounding box of your
+file) horizontally and vertically on the output. A few consequences:
+
+- **Trailing whitespace counts.** Lines padded with extra spaces on the
+  right widen the bounding box and shift the visual center off-axis.
+  Strip trailing whitespace before saving — most editors have a setting
+  for it (`:set list` in vim, "Trim trailing whitespace on save" in
+  VS Code).
+- **Blank lines at top/bottom add vertical padding.** Useful if you
+  want breathing room around an icon-only logo. They're treated as part
+  of the bounding box.
+- **Combining icon + wordmark** (the `*-name-with-icon.txt` pattern):
+  stack them in one file with one or two blank lines between. They'll
+  render as one block.
 
 **Characters.** Block elements (`█ ▓ ▒ ░`) and box-drawing
 (`╔═╗ ║ ╚═╝`) render most cleanly across monospace fonts. Per-glyph

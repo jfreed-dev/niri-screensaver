@@ -9,10 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
-- README: expanded the "Adding your own" logo subsection (now
-  "Creating your own") with sizing guidance, recommended characters,
-  tool recipes (`figlet`, `jp2a`, `chafa`, patorjk web generator), and
-  a `LOGO_FILE=... niri-screensaver-ctl test` preview workflow.
+- README "Creating your own" logo subsection now covers **layout**
+  (centering behavior, trailing-whitespace gotcha, blank-line padding,
+  icon+wordmark stacking) and includes a small size reference table.
+  Existing tool recipes (`figlet`, `jp2a`, `chafa`, patorjk web
+  generator) and the `LOGO_FILE=... niri-screensaver-ctl test` preview
+  workflow are retained.
+- `noctalia-plugin/README.md` Settings table rebuilt with a `Widget`
+  column reflecting actual control types (toggle / spinbox / dropdown /
+  text + Browse / button), and the previously-missing `LOGO_FILE`,
+  `SHOW_NOW_PLAYING`, and `NOW_PLAYING_DURATION` rows added. New
+  "Logos" section in the plugin README covers the dropdown's auto-
+  refresh behavior, the effective-dir resolution order, and a concise
+  layout/size primer that cross-links to the upstream README for the
+  full guide.
 
 ### Added
 
@@ -24,6 +34,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is on, since the random picker overrides any specific selection.
   Previously the `logoPath` setting had no UI and was only editable by
   hand-editing the Noctalia settings JSON.
+- Noctalia plugin: fade-in / fade-out effect controls are now
+  `NComboBox` dropdowns populated at startup from
+  `niri-screensaver-ctl effects` (deduped + sorted). First entry
+  `(none)` clears the fade. Eliminates the silent-no-op when a typo'd
+  effect name slipped past the free-text inputs.
+- Noctalia plugin: "Logo directory" now uses `NTextInputButton` —
+  text input on the left, folder icon on the right that opens
+  Noctalia's `NFilePicker` in folder-select mode. The picker starts at
+  your current `logoDir` if set, otherwise at the detected install
+  path. Picking a folder fills the text input; the input stays
+  editable for paste / type workflows.
+- Noctalia plugin: Logo section moved above Effects in the Settings
+  panel (matches typical edit frequency); within Logo, the file
+  dropdown is now first, then Random toggle, then directory. `.txt`
+  extensions are stripped from dropdown display names; combobox
+  `minimumWidth` bumped to 320px to fit the longest shipped logo
+  names without truncation.
 
 ### Changed
 
