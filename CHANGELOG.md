@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] — 2026-05-18
+
+### Changed
+
+- `install.sh` cache-refresh guards rewritten with explicit
+  `if cmd; then action || true; fi` rather than
+  `cmd && action || true` to satisfy stricter shellcheck (SC2015).
+  Runtime behavior is identical — both forms no-op when the tool
+  isn't installed and don't break the install on cache-refresh
+  failure. Only the lint pattern changed. Caught by CI on a newer
+  shellcheck version than the one shipped locally.
+- AUR packaging scaffold (`packaging/aur/`) received pre-publish
+  polish per a full pass against `AUR_submission_guidelines`:
+  0BSD `LICENSE` per package dir (gates eligibility for official-
+  repo promotion), whitelist `.gitignore` in the publish recipe
+  (fail-closed against future file types accidentally landing in
+  the AUR repo), obfuscated maintainer email, and a corrected
+  first-time publish recipe using `git -c init.defaultBranch=master
+  clone` since AUR only accepts pushes to `master`. None of this
+  changes runtime behavior — strictly publishing hygiene.
+
 ## [0.5.3] — 2026-05-18
 
 ### Fixed
@@ -382,6 +403,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `share/logos/` initial set: Framework square frame, FRAMEWORK wordmark,
   combined.
 
+[0.5.4]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.0...v0.5.1
