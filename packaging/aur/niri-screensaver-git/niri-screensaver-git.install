@@ -11,8 +11,9 @@ Three things to wire up before it'll trigger:
 
   2. Idle integration — pick one:
        * Noctalia plugin (recommended)
-           ln -s /usr/share/niri-screensaver/noctalia-plugin \
-                 ~/.config/noctalia/plugins/niri-screensaver
+           mkdir -p ~/.config/noctalia/plugins
+           ln -sfn /usr/share/niri-screensaver/noctalia-plugin \
+                   ~/.config/noctalia/plugins/niri-screensaver
          then enable in Noctalia → Settings → Plugins.
        * Inline Noctalia custom-command snippet:
            /usr/share/doc/niri-screensaver/noctalia-customCommand.json

@@ -14,7 +14,7 @@ Actions=Test;Toggle;
 
 [Desktop Action Test]
 Name=Preview an effect inline
-Exec=niri-screensaver-ctl test
+Exec=alacritty -T "niri-screensaver: test" -e niri-screensaver-ctl test
 
 [Desktop Action Toggle]
 Name=Enable / disable screensaver
