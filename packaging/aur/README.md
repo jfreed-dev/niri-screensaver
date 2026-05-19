@@ -5,7 +5,7 @@ Repository](https://aur.archlinux.org/):
 
 | Package | Source | Use when |
 |---|---|---|
-| `niri-screensaver` | Latest release tarball (currently `v0.5.3`) | You want stable releases pinned to tagged versions |
+| `niri-screensaver` | Latest release tarball (currently `v0.5.4`) | You want stable releases pinned to tagged versions |
 | `niri-screensaver-git` | `main` branch, HEAD | You want bleeding-edge or to test pre-release fixes |
 
 They `provides`/`conflicts` each other so users can only have one
@@ -51,7 +51,7 @@ cat > .gitignore <<'EOF'
 EOF
 makepkg --printsrcinfo > .SRCINFO
 git add .gitignore LICENSE PKGBUILD .SRCINFO niri-screensaver.install
-git commit -m "init: niri-screensaver 0.5.3-1"
+git commit -m "init: niri-screensaver 0.5.4-1"
 git push
 ```
 
