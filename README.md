@@ -114,14 +114,10 @@ which is how the launcher achieves fullscreen without an Alacritty CLI flag.
 
 ## Wire it into Noctalia
 
-Two options.
+Three options, from least to most friction.
 
-### Option A — Native plugin (recommended)
-
-The `noctalia-plugin/` subdirectory ships a Noctalia plugin (manifest + QML)
-that adds a Settings tab, a bar widget, and auto-registers the screensaver
-in Noctalia's IdleService when enabled. See `noctalia-plugin/README.md` for
-install instructions (point Noctalia at this repo URL as a custom plugin source).
+The plugin adds a Settings tab, a bar widget, and auto-registers the
+screensaver in Noctalia's `IdleService` when enabled.
 
 ![Plugin bar widget with screensaver running](noctalia-plugin/preview.png)
 
@@ -129,12 +125,41 @@ install instructions (point Noctalia at this repo URL as a custom plugin source)
 > plugin's bar widget (custom monitor-with-image icon, far left of the
 > tray cluster) launches the screensaver on click.
 
-### Option B — Manual JSON edit
+### Option A — Symlink the AUR-shipped plugin (Arch / CachyOS, recommended)
 
-Copy the relevant fields from `docs/noctalia-customCommand.json` into
-`~/.config/noctalia/settings.json` under the `idle` object. After saving,
-restart Noctalia (`pkill qs` then re-launch `qs -c noctalia-shell`) to pick
-up the new idle hook.
+If you installed via the AUR package above, the plugin source is already
+on disk at `/usr/share/niri-screensaver/noctalia-plugin/`. Symlink it
+into Noctalia's per-user plugin dir:
+
+```bash
+mkdir -p ~/.config/noctalia/plugins
+ln -sfn /usr/share/niri-screensaver/noctalia-plugin \
+        ~/.config/noctalia/plugins/niri-screensaver
+```
+
+Then enable it in **Noctalia → Settings → Plugins**. Future `yay -Syu`
+updates flow into the symlink target automatically — no separate plugin
+update step.
+
+### Option B — Install from the Noctalia plugin registry (any distro)
+
+Open **Noctalia → Settings → Plugins**, find `niri-screensaver` in the
+registry browser, install. The plugin lands in
+`~/.config/noctalia/plugins/`.
+
+Note: the registry ships only the plugin's QML files. The bash CLI
+(`niri-screensaver-launch` and friends) is a separate install — use the
+AUR package on Arch / CachyOS, or `./install.sh` from this repo on other
+distros. If the CLI is missing, the plugin's Settings tab shows a
+"install niri-screensaver first" banner.
+
+### Option C — Manual JSON edit (no plugin)
+
+If you don't want the Noctalia plugin (no Settings UI, no bar widget),
+just wire the idle trigger directly: copy the relevant fields from
+`docs/noctalia-customCommand.json` into `~/.config/noctalia/settings.json`
+under the `idle` object. After saving, restart Noctalia (`pkill qs` then
+re-launch `qs -c noctalia-shell`) to pick up the new idle hook.
 
 ## Usage
 
