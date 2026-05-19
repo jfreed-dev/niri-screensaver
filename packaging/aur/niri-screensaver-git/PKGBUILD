@@ -15,10 +15,10 @@ depends=(
 )
 optdepends=(
     'noctalia-shell: idle/lock integration via included plugin'
-    'playerctl: now-playing overlay between effects (SHOW_NOW_PLAYING=true)'
-    'wlrctl: cursor parking under niri (recommended)'
-    'ydotool: fallback for cursor parking when wlrctl is absent'
-    'figlet: large ASCII rendering for clock and now-playing overlays'
+    'playerctl: now-playing overlay'
+    'wlrctl: cursor parking under niri'
+    'ydotool: cursor-parking fallback if wlrctl is absent'
+    'figlet: large ASCII rendering for clock and overlays'
 )
 makedepends=('git')
 provides=("$_pkgname=$pkgver")

@@ -12,10 +12,10 @@ pkgbase = niri-screensaver-git
 	depends = python-terminaltexteffects
 	depends = jq
 	optdepends = noctalia-shell: idle/lock integration via included plugin
-	optdepends = playerctl: now-playing overlay between effects (SHOW_NOW_PLAYING=true)
-	optdepends = wlrctl: cursor parking under niri (recommended)
-	optdepends = ydotool: fallback for cursor parking when wlrctl is absent
-	optdepends = figlet: large ASCII rendering for clock and now-playing overlays
+	optdepends = playerctl: now-playing overlay
+	optdepends = wlrctl: cursor parking under niri
+	optdepends = ydotool: cursor-parking fallback if wlrctl is absent
+	optdepends = figlet: large ASCII rendering for clock and overlays
 	provides = niri-screensaver=0.5.5.r0.g7e948d7
 	conflicts = niri-screensaver
 	source = niri-screensaver::git+https://github.com/jfreed-dev/niri-screensaver.git

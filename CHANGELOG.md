@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] — 2026-05-18
+
+### Changed
+
+- AUR PKGBUILD `optdepends` descriptions trimmed across both packages.
+  Dropped parenthetical / env-var noise: `playerctl` no longer carries
+  `(SHOW_NOW_PLAYING=true)`, `wlrctl` no longer carries `(recommended)`,
+  and the `ydotool` / `figlet` blurbs are slightly shorter. The env
+  var docs belong in the README, not in a pacman info pane. Cleaner
+  output from `pacman -Qi` and `pacman -Si`. Also reduces the volume
+  of false errors produced by CachyOS's `shelly` package manager,
+  which has a parser bug that splits optdep descriptions on
+  whitespace and treats each token as a separate package name
+  (standard `pacman` / `paru` / `yay` were never affected).
+
 ## [0.5.5] — 2026-05-18
 
 ### Fixed
@@ -422,6 +437,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `share/logos/` initial set: Framework square frame, FRAMEWORK wordmark,
   combined.
 
+[0.5.6]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.5...v0.5.6
 [0.5.5]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.2...v0.5.3
