@@ -1,0 +1,69 @@
+name: aur-publish
+
+# Triggers on any v* tag push. The first-time AUR repo creation must
+# still be done manually (push from your workstation with the SSH key
+# you registered with AUR). After that, this workflow keeps the stable
+# AUR package in sync with each new release tag automatically.
+#
+# Setup checklist for the maintainer:
+#   1. Generate / register an SSH key with your AUR account.
+#   2. Manually do the first push for `niri-screensaver` AUR repo
+#      (see packaging/aur/README.md for the recipe).
+#   3. Add the AUR private key as a GitHub Actions secret named
+#      `AUR_SSH_PRIVATE_KEY` (Repo Settings → Secrets and variables →
+#      Actions → New repository secret). Paste the *private* key body
+#      including the BEGIN/END lines.
+#   4. Push a new v* tag — this workflow will then auto-update the
+#      stable AUR package.
+#
+# The `-git` PKGBUILD is intentionally NOT touched here: its pkgver()
+# recomputes from `git describe` at build time, so AUR users always
+# pick up new commits without an AUR-side update. Only manually push
+# the `-git` PKGBUILD when the PKGBUILD itself changes (e.g. new
+# dependency, install layout change).
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish-stable:
+    name: publish niri-screensaver to AUR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compute tarball sha256 for this tag
+        id: prep
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          tarball_url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          echo "Fetching ${tarball_url}"
+          sha=$(curl -sSLf "$tarball_url" | sha256sum | awk '{print $1}')
+          echo "Computed sha256: $sha"
+          # Update the in-workspace PKGBUILD (NOT committed back to main —
+          # the workflow run is ephemeral; main keeps the last manually-bumped
+          # values, which act as a known-good template).
+          sed -i "s/^pkgver=.*/pkgver=${version}/" packaging/aur/niri-screensaver/PKGBUILD
+          sed -i "s/^sha256sums=.*/sha256sums=('${sha}')/" packaging/aur/niri-screensaver/PKGBUILD
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v4.1.1
+        with:
+          pkgname: niri-screensaver
+          pkgbuild: packaging/aur/niri-screensaver/PKGBUILD
+          assets: |
+            packaging/aur/niri-screensaver/LICENSE
+            packaging/aur/niri-screensaver/niri-screensaver.install
+          commit_username: Jonathan Freed
+          commit_email: jon at freed dot dev
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ github.ref_name }}"
+          ssh_keyscan_types: rsa,ecdsa,ed25519
+          updpkgsums: false
+          test: false
