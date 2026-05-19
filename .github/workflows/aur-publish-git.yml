@@ -1,0 +1,72 @@
+name: aur-publish-git
+
+# Three triggers, all converge on the same "push -git to AUR" pipeline:
+#
+#   1. push to main that touches packaging/aur/niri-screensaver-git/**
+#      → the PKGBUILD or .install actually changed; AUR needs the update.
+#
+#   2. workflow_run after `aur-publish` completes (i.e. a v* tag was just
+#      published to the stable AUR repo) → also refresh the -git pkgver
+#      displayed on AUR so it tracks the latest tagged release. Without
+#      this, the -git AUR page shows a stale "last manually pushed"
+#      version until the next packaging change.
+#
+#   3. workflow_dispatch → manual re-publish from the Actions UI.
+#
+# In all cases pkgver() is recomputed from `git describe` against main
+# HEAD, the in-workspace PKGBUILD is patched, and KSXGitHub's action
+# pushes to the niri-screensaver-git AUR repo.
+#
+# The action's default `allow_empty_commits: false` means no-op runs
+# (no changed content) won't spam AUR with empty commits.
+
+on:
+  push:
+    branches: [main]
+    paths: ['packaging/aur/niri-screensaver-git/**']
+  workflow_run:
+    workflows: [aur-publish]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-git:
+    name: publish niri-screensaver-git to AUR
+    runs-on: ubuntu-latest
+    # workflow_run only fires when the upstream workflow succeeded;
+    # skip if it failed (no point publishing -git if stable failed).
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # need full history for git describe
+
+      - name: Compute fresh pkgver via git describe
+        run: |
+          set -euo pipefail
+          pkgver=$(git describe --long --tags --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
+          echo "Computed pkgver: $pkgver"
+          # Patch the in-workspace -git PKGBUILD (NOT committed back to main —
+          # the workflow run is ephemeral). Other lines stay as-is; the
+          # template's pkgver field is what the AUR page surfaces to users.
+          sed -i "s/^pkgver=.*/pkgver=${pkgver}/" packaging/aur/niri-screensaver-git/PKGBUILD
+          grep "^pkgver" packaging/aur/niri-screensaver-git/PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        with:
+          pkgname: niri-screensaver-git
+          pkgbuild: packaging/aur/niri-screensaver-git/PKGBUILD
+          assets: |
+            packaging/aur/niri-screensaver-git/LICENSE
+            packaging/aur/niri-screensaver-git/niri-screensaver-git.install
+          commit_username: Jonathan Freed
+          commit_email: jon at freed dot dev
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Sync to ${{ github.sha }}"
+          ssh_keyscan_types: rsa,ecdsa,ed25519
+          updpkgsums: false
+          test: false
