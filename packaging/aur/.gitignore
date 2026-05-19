@@ -1,0 +1,13 @@
+# makepkg build artifacts — never commit these to the in-source-tree
+# packaging copy or to AUR repos. See packaging/aur/README.md for the
+# AUR-side .gitignore (which is structurally identical but lives in
+# each separate AUR git repo).
+*/pkg/
+*/src/
+*/*.pkg.tar.*
+*/*.src.tar.*
+*/*.tar.gz
+*/*.log
+
+# Cloned git source from -git PKGBUILD's `source` array
+niri-screensaver-git/niri-screensaver/

@@ -17,11 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   niri window-rule snippet, the Noctalia plugin symlink command, and
   the inline `noctalia-customCommand.json` fallback.
   Pre-generated `.SRCINFO` files included so AUR sync is a clean copy.
+  `packaging/aur/.gitignore` excludes makepkg build artifacts (`pkg/`,
+  `src/`, `*.pkg.tar.*`, fetched tarballs, etc.) so a stray
+  `git add -A` from the repo root doesn't accidentally commit them.
   `packaging/aur/README.md` documents first-time publish and per-release
-  update flow. All declared deps (`alacritty`, `niri`, `jq`,
-  `python-terminaltexteffects`) plus optdeps (`noctalia-shell`,
-  `playerctl`, `wlrctl`, `ydotool`, `figlet`) verified present in
-  Arch repos or AUR.
+  update flow, including the structurally identical `.gitignore` that
+  belongs in each AUR-side repo. All declared deps (`alacritty`,
+  `niri`, `jq`, `python-terminaltexteffects`) plus optdeps
+  (`noctalia-shell`, `playerctl`, `wlrctl`, `ydotool`, `figlet`)
+  verified present in Arch repos or AUR. End-to-end test build
+  confirmed: `makepkg --verifysource` passes, `makepkg -d` produces a
+  92K `niri-screensaver-0.5.1-1-any.pkg.tar.zst` with the expected
+  41-file layout, and the `-git` PKGBUILD's `pkgver()` resolves
+  correctly to `<tag>.r<count>.g<short-hash>`.
 - CI: `.github/workflows/release.yml` auto-creates a GitHub Release
   on any `v*` tag push. Pulls the matching `## [X.Y.Z]` section out of
   `CHANGELOG.md` via `awk` and feeds it to `gh release create
