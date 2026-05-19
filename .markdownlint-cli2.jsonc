@@ -41,6 +41,11 @@
     // Per-user Claude Code guidance; gitignored but may exist in working tree.
     "CLAUDE.md",
     // Third-party logo attributions; formatting follows upstream sources.
-    "share/logos/LICENSES.md"
+    "share/logos/LICENSES.md",
+    // makepkg build/source dirs under packaging/aur/* — gitignored, but
+    // markdownlint scans the filesystem, not git, so a stale pkg/ or src/
+    // from a local test build would otherwise re-flag the same files.
+    "packaging/aur/*/pkg/**",
+    "packaging/aur/*/src/**"
   ]
 }
