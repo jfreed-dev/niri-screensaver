@@ -2,12 +2,11 @@
 pkgname=niri-screensaver
 pkgver=0.5.1
 pkgrel=1
-pkgdesc="Terminal screensaver for the niri Wayland compositor, driven by TerminalTextEffects"
+pkgdesc="TerminalTextEffects-based screensaver for the niri Wayland compositor"
 arch=('any')
 url="https://github.com/jfreed-dev/niri-screensaver"
 license=('GPL-3.0-only')
 depends=(
-    'bash'
     'alacritty'
     'niri'
     'python-terminaltexteffects'
@@ -20,7 +19,6 @@ optdepends=(
     'ydotool: fallback for cursor parking when wlrctl is absent'
     'figlet: large ASCII rendering for clock and now-playing overlays'
 )
-makedepends=('git')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('16159fbf9e48b383aa145673c81684bdb3bc15b7f6e79158d8b3e198b6836d6b')
 install="$pkgname.install"

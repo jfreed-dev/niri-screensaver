@@ -1,13 +1,12 @@
 pkgbase = niri-screensaver-git
-	pkgdesc = Terminal screensaver for the niri Wayland compositor, driven by TerminalTextEffects (git HEAD)
+	pkgdesc = TerminalTextEffects-based screensaver for the niri Wayland compositor (git)
 	pkgver = 0.5.1.r0.g0000000
 	pkgrel = 1
 	url = https://github.com/jfreed-dev/niri-screensaver
-	install = niri-screensaver.install
+	install = niri-screensaver-git.install
 	arch = any
 	license = GPL-3.0-only
 	makedepends = git
-	depends = bash
 	depends = alacritty
 	depends = niri
 	depends = python-terminaltexteffects

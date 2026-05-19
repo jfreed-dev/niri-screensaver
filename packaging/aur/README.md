@@ -32,13 +32,32 @@ ssh aur@aur.archlinux.org setup-repo niri-screensaver
 git clone ssh://aur@aur.archlinux.org/niri-screensaver.git /tmp/aur-stable
 cp packaging/aur/niri-screensaver/{PKGBUILD,niri-screensaver.install} /tmp/aur-stable/
 cd /tmp/aur-stable
+cat > .gitignore <<'EOF'
+pkg/
+src/
+*.pkg.tar.*
+*.src.tar.*
+*.tar.gz
+*.log
+EOF
 makepkg --printsrcinfo > .SRCINFO
-git add PKGBUILD .SRCINFO niri-screensaver.install
+git add .gitignore PKGBUILD .SRCINFO niri-screensaver.install
 git commit -m "init: niri-screensaver 0.5.1-1"
 git push
 ```
 
-Repeat for `niri-screensaver-git` with its own AUR repo path.
+Repeat for `niri-screensaver-git` with its own AUR repo path (the install
+file there is `niri-screensaver-git.install`).
+
+### Why the `.gitignore`
+
+The AUR repo must contain **only** packaging sources — `PKGBUILD`,
+`.SRCINFO`, the `.install` hook, and any local patches. It must **not**
+contain build artifacts (`pkg/`, `src/`, `*.pkg.tar.zst`) or fetched
+upstream tarballs. `makepkg` creates all of those during a local test
+build and they'll otherwise be staged on the next `git add -A`. AUR
+reviewers reject repos that bundle prebuilt binaries or vendored
+source.
 
 ## Maintenance per release
 
