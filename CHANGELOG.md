@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Desktop integration: `share/applications/niri-screensaver.desktop`
+  and `share/icons/hicolor/scalable/apps/niri-screensaver.svg`. The
+  `.desktop` entry exposes the primary `niri-screensaver-ctl launch`
+  action plus two `Actions=` entries (Preview an effect inline,
+  Enable/disable screensaver) so launchers like Fuzzel/Anyrun/Walker
+  can right-click to the secondary actions. Icon is a charcoal-stroke
+  variant of the existing plugin SVG so it stays visible across
+  light and dark GTK/Qt themes (the plugin's `stroke="white"`
+  version is intentional for Noctalia tinting and stays as-is). Both
+  install.sh and the AUR PKGBUILDs ship them to their respective
+  XDG paths and refresh `gtk-update-icon-cache` /
+  `update-desktop-database` post-install (silent no-op if those
+  tools aren't installed).
 - AUR PKGBUILDs scaffolded under `packaging/aur/` — both
   `niri-screensaver` (stable, tracks tags; `pkgver=0.5.1` with the
   v0.5.1 tarball sha256 baked in) and `niri-screensaver-git` (HEAD,

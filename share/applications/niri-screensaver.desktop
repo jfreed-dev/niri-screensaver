@@ -1,0 +1,21 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Niri Screensaver
+GenericName=Screensaver
+Comment=Terminal-text-effects screensaver for the niri Wayland compositor
+Exec=niri-screensaver-ctl launch
+Icon=niri-screensaver
+Terminal=false
+Categories=Utility;
+Keywords=screensaver;terminal;effects;niri;wayland;
+StartupNotify=false
+Actions=Test;Toggle;
+
+[Desktop Action Test]
+Name=Preview an effect inline
+Exec=niri-screensaver-ctl test
+
+[Desktop Action Toggle]
+Name=Enable / disable screensaver
+Exec=niri-screensaver-ctl toggle

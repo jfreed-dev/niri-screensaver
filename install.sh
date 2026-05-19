@@ -27,8 +27,23 @@ install -m 0755 "$REPO_DIR/bin/niri-screensaver-ctl"    "$BIN_DIR/niri-screensav
 install -m 0644 "$REPO_DIR/share/alacritty-screensaver.toml" "$DATA_DIR/"
 install -m 0644 "$REPO_DIR/share/logos/"*.txt               "$DATA_DIR/logos/"
 
+# Desktop integration (XDG user paths)
+ICON_DIR="${PREFIX}/share/icons/hicolor/scalable/apps"
+APPS_DIR="${PREFIX}/share/applications"
+install -Dm 0644 "$REPO_DIR/share/icons/hicolor/scalable/apps/niri-screensaver.svg" \
+    "$ICON_DIR/niri-screensaver.svg"
+install -Dm 0644 "$REPO_DIR/share/applications/niri-screensaver.desktop" \
+    "$APPS_DIR/niri-screensaver.desktop"
+
+# Best-effort cache refresh — silent no-op if the tool isn't present
+command -v gtk-update-icon-cache &>/dev/null && \
+    gtk-update-icon-cache -q -t "${PREFIX}/share/icons/hicolor" 2>/dev/null || true
+command -v update-desktop-database &>/dev/null && \
+    update-desktop-database -q "$APPS_DIR" 2>/dev/null || true
+
 ok "Binaries installed to $BIN_DIR"
 ok "Assets installed to $DATA_DIR"
+ok "Desktop entry installed to $APPS_DIR"
 
 cat << EOF
 

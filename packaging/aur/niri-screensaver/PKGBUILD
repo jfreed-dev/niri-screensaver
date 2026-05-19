@@ -38,6 +38,11 @@ package() {
     install -m 0644 share/logos/LICENSES.md \
         "$pkgdir/usr/share/niri-screensaver/logos/LICENSES.md"
 
+    install -Dm 0644 share/icons/hicolor/scalable/apps/niri-screensaver.svg \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/niri-screensaver.svg"
+    install -Dm 0644 share/applications/niri-screensaver.desktop \
+        "$pkgdir/usr/share/applications/niri-screensaver.desktop"
+
     install -Dm 0644 docs/niri-window-rule.kdl \
         "$pkgdir/usr/share/doc/$pkgname/niri-window-rule.kdl"
     install -Dm 0644 docs/noctalia-customCommand.json \

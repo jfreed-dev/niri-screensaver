@@ -1,4 +1,5 @@
 post_install() {
+    _refresh_caches
     cat <<'EOF'
 
 ==> niri-screensaver-git installed (tracks main branch).
@@ -26,5 +27,16 @@ EOF
 }
 
 post_upgrade() {
-    post_install
+    _refresh_caches
+}
+
+post_remove() {
+    _refresh_caches
+}
+
+_refresh_caches() {
+    command -v gtk-update-icon-cache &>/dev/null && \
+        gtk-update-icon-cache -q -t /usr/share/icons/hicolor 2>/dev/null || true
+    command -v update-desktop-database &>/dev/null && \
+        update-desktop-database -q /usr/share/applications 2>/dev/null || true
 }
