@@ -25,6 +25,12 @@ name: aur-publish
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to (re)publish (e.g. v0.5.4). Useful if AUR ever drifts out of sync.'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -36,12 +42,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Compute tarball sha256 for this tag
-        id: prep
+      - name: Resolve target tag
+        id: resolve
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          tarball_url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute tarball sha256 for this tag
+        run: |
+          set -euo pipefail
+          tag="${{ steps.resolve.outputs.tag }}"
+          version="${{ steps.resolve.outputs.version }}"
+          tarball_url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${tag}.tar.gz"
           echo "Fetching ${tarball_url}"
           sha=$(curl -sSLf "$tarball_url" | sha256sum | awk '{print $1}')
           echo "Computed sha256: $sha"
@@ -50,7 +68,6 @@ jobs:
           # values, which act as a known-good template).
           sed -i "s/^pkgver=.*/pkgver=${version}/" packaging/aur/niri-screensaver/PKGBUILD
           sed -i "s/^sha256sums=.*/sha256sums=('${sha}')/" packaging/aur/niri-screensaver/PKGBUILD
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@v4.1.1
@@ -63,7 +80,7 @@ jobs:
           commit_username: Jonathan Freed
           commit_email: jon at freed dot dev
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: "Update to ${{ github.ref_name }}"
+          commit_message: "Update to ${{ steps.resolve.outputs.tag }}"
           ssh_keyscan_types: rsa,ecdsa,ed25519
           updpkgsums: false
           test: false
