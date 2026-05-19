@@ -1,0 +1,23 @@
+pkgbase = niri-screensaver
+	pkgdesc = Terminal screensaver for the niri Wayland compositor, driven by TerminalTextEffects
+	pkgver = 0.5.1
+	pkgrel = 1
+	url = https://github.com/jfreed-dev/niri-screensaver
+	install = niri-screensaver.install
+	arch = any
+	license = GPL-3.0-only
+	makedepends = git
+	depends = bash
+	depends = alacritty
+	depends = niri
+	depends = python-terminaltexteffects
+	depends = jq
+	optdepends = noctalia-shell: idle/lock integration via included plugin
+	optdepends = playerctl: now-playing overlay between effects (SHOW_NOW_PLAYING=true)
+	optdepends = wlrctl: cursor parking under niri (recommended)
+	optdepends = ydotool: fallback for cursor parking when wlrctl is absent
+	optdepends = figlet: large ASCII rendering for clock and now-playing overlays
+	source = niri-screensaver-0.5.1.tar.gz::https://github.com/jfreed-dev/niri-screensaver/archive/refs/tags/v0.5.1.tar.gz
+	sha256sums = 16159fbf9e48b383aa145673c81684bdb3bc15b7f6e79158d8b3e198b6836d6b
+
+pkgname = niri-screensaver

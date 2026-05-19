@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- AUR PKGBUILDs scaffolded under `packaging/aur/` — both
+  `niri-screensaver` (stable, tracks tags; `pkgver=0.5.1` with the
+  v0.5.1 tarball sha256 baked in) and `niri-screensaver-git` (HEAD,
+  with a `pkgver()` that derives from `git describe`). Each ships a
+  `niri-screensaver.install` post-install hook that points the user
+  at the niri window-rule snippet, the Noctalia plugin symlink
+  command, and the inline `noctalia-customCommand.json` fallback.
+  Pre-generated `.SRCINFO` files included so AUR sync is a clean copy.
+  `packaging/aur/README.md` documents first-time publish and per-release
+  update flow. All declared deps (`alacritty`, `niri`, `jq`,
+  `python-terminaltexteffects`) plus optdeps (`noctalia-shell`,
+  `playerctl`, `wlrctl`, `ydotool`, `figlet`) verified present in
+  Arch repos or AUR.
 - CI: `.github/workflows/release.yml` auto-creates a GitHub Release
   on any `v*` tag push. Pulls the matching `## [X.Y.Z]` section out of
   `CHANGELOG.md` via `awk` and feeds it to `gh release create
