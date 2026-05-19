@@ -262,12 +262,47 @@ ln -sf ~/.local/share/niri-screensaver/logos/framework-name-with-icon-medium.txt
 Per-file attribution, licensing, and trademark notes are in
 [share/logos/LICENSES.md](share/logos/LICENSES.md).
 
-### Adding your own
+### Creating your own
 
 Drop any UTF-8 text file into `~/.local/share/niri-screensaver/logos/`
-(or `share/logos/` in the repo) and point `LOGO_FILE` at it. TTE
-renders any text content; block characters (`█`) and ANSI Shadow
-letters look best.
+(or `share/logos/` in the repo) and point `LOGO_FILE` at it — or pick
+it from the Noctalia plugin's logo dropdown, which auto-refreshes when
+files appear in that directory.
+
+**Sizing.** Logos render as-is at the center of each output, so plan
+for the narrowest terminal you'll run on. The shipped logos stay within
+~40–60 columns wide; go much wider and lines will wrap on smaller
+monitors. Height is less constrained — `niri-name-with-icon.txt` is 49
+lines and renders fine at 1080p.
+
+**Characters.** Block elements (`█ ▓ ▒ ░`) and box-drawing
+(`╔═╗ ║ ╚═╝`) render most cleanly across monospace fonts. Per-glyph
+ANSI Shadow wordmarks (the style used by every `*-name.txt`) are the
+easiest way to get a polished result.
+
+**Tools.**
+
+- Wordmarks from text: `figlet -f "ANSI Shadow" YOURTEXT`. If the font
+  isn't installed, grab it from
+  [xero/figlet-fonts](https://github.com/xero/figlet-fonts) or use the
+  web generator below.
+- Image → ASCII: `jp2a --width=40 --chars=" ░▒▓█" logo.png` or
+  `chafa --symbols=block --size=40x logo.png`. Both emit pure UTF-8
+  without ANSI color codes (TTE won't preserve mid-effect colors).
+- Web generator: [patorjk.com/software/taag/](https://patorjk.com/software/taag/)
+  has a font picker and a "Copy" button — paste the output into a
+  `.txt` and trim any trailing blank lines.
+
+**Preview.** Render a single effect inline (no fullscreen) with your
+in-progress file:
+
+```bash
+LOGO_FILE=~/Downloads/mylogo.txt niri-screensaver-ctl test
+LOGO_FILE=~/Downloads/mylogo.txt niri-screensaver-ctl test beams
+```
+
+Iterate on the file, re-run `test`, drop it into the logos directory
+when you're happy with it.
 
 ## Trademarks
 

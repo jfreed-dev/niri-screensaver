@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- README: expanded the "Adding your own" logo subsection (now
+  "Creating your own") with sizing guidance, recommended characters,
+  tool recipes (`figlet`, `jp2a`, `chafa`, patorjk web generator), and
+  a `LOGO_FILE=... niri-screensaver-ctl test` preview workflow.
+
 ### Added
 
 - Noctalia plugin: dropdown selector for the logo file in the Logo
