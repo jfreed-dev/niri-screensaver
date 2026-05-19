@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- CI: `.github/workflows/release.yml` auto-creates a GitHub Release
+  on any `v*` tag push. Pulls the matching `## [X.Y.Z]` section out of
+  `CHANGELOG.md` via `awk` and feeds it to `gh release create
+  --notes-file`. Falls back to the bare tag name if no matching section
+  exists. Backfilled releases for v0.4.0/v0.5.0/v0.5.1 so the
+  "Releases" sidebar reflects the actual ship history. Future cuts
+  only require `git tag vX.Y.Z && git push origin vX.Y.Z`.
+
 ## [0.5.1] — 2026-05-18
 
 ### Fixed
