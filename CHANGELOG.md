@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] — 2026-05-18
+
+### Fixed
+
+- `.desktop` "Preview an effect inline" action wrapped in
+  `alacritty -e ...` so it works when invoked from a desktop
+  launcher (Fuzzel, Anyrun, GNOME Activities, etc.). The
+  underlying `niri-screensaver-ctl test` needs a TTY for `tte`
+  to render; without the wrapper, launcher invocations silently
+  no-op. CLI use was always fine. Alacritty is already a hard
+  runtime dep, so no new dependency.
+
 ## [0.5.2] — 2026-05-18
 
 ### Added
@@ -370,6 +382,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `share/logos/` initial set: Framework square frame, FRAMEWORK wordmark,
   combined.
 
+[0.5.3]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.4.0...v0.5.0
