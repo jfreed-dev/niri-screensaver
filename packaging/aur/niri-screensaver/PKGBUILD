@@ -1,6 +1,6 @@
 # Maintainer: Jonathan Freed <jon@freed.dev>
 pkgname=niri-screensaver
-pkgver=0.5.1
+pkgver=0.5.2
 pkgrel=1
 pkgdesc="TerminalTextEffects-based screensaver for the niri Wayland compositor"
 arch=('any')
@@ -20,7 +20,7 @@ optdepends=(
     'figlet: large ASCII rendering for clock and now-playing overlays'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('16159fbf9e48b383aa145673c81684bdb3bc15b7f6e79158d8b3e198b6836d6b')
+sha256sums=('6c3414c1e40532d9b631437396796fc1cd4bb5d6a955527a65fc24dce7f61f66')
 install="$pkgname.install"
 
 package() {
