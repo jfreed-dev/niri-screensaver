@@ -9,7 +9,7 @@ then together) plus a UAT checklist for user-visible behavior.
 
 ```bash
 # Lint + structural sanity (run before every commit)
-make pre-commit             # shellcheck + json + doc-links
+make pre-commit             # shellcheck + json + doc-links + typos + markdownlint + actionlint
 
 # Build / install state
 make health-quick           # build/lint/structural — no runtime needed

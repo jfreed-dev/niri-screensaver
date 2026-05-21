@@ -5,8 +5,8 @@ What `make check` runs, why, and how to extend it.
 ## Overview
 
 There is no compile step in this project. Quality gates run on the
-*source files we ship* — bash, JSON (manifest + i18n), markdown, QML
-(structure-only). The same three jobs run in CI
+*source files we ship* — bash, JSON (manifest + i18n), markdown, GitHub
+Actions workflows, and prose. The same six jobs run in CI
 ([.github/workflows/ci.yml](../../.github/workflows/ci.yml)) so local
 parity is one `make check` away.
 
@@ -15,20 +15,33 @@ parity is one `make check` away.
 | `shellcheck -x` | Bash linter; follows `source` directives across files | `bin/*` and `install.sh` are checked; warnings fail the build |
 | `python3 -c "import json; json.load(...)"` | JSON parse validation | Every `*.json` in tree, excluding `.git/` |
 | `scripts/check-doc-links.sh` | Markdown link + inline-path validity | Top-level docs (`README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`) |
+| `typos` | Source + prose spell checker | Config: `_typos.toml` |
+| `markdownlint-cli2` | Markdown style | Config: `.markdownlint-cli2.jsonc` (MD024/MD060 disabled — see note below) |
+| `actionlint` | GitHub Actions workflow linter | `.github/workflows/*.yml` |
 | `.editorconfig` | Whitespace conventions across languages | Enforced by editor; not a CI gate |
 
 ## Quick commands
 
 ```bash
-make check                  # all three gates (== CI)
+make check                  # all six gates (== CI)
 make shellcheck             # bash only
 make json-validate          # JSON only
 make doc-links              # docs only
+make typos                  # spell check only
+make markdownlint           # markdown style only
+make actionlint             # workflow lint only
 
 make health-quick           # check + structural sanity (no runtime)
 make health                 # adds runtime/integration checks
 make pre-commit             # alias for 'make check'
 ```
+
+> **Local/CI parity caveat:** `typos`, `markdownlint`, and `actionlint`
+> **skip with an install hint** when their tool isn't installed locally,
+> so `make check` runs on a fresh clone — but all three are *hard gates*
+> in CI. A local `make check` showing `SKIP` lines is **not** full
+> parity. Install the missing tools (the skip line prints the exact
+> command) for a green local run to mean a green CI run.
 
 ## ShellCheck
 
@@ -148,7 +161,7 @@ chmod +x .git/hooks/pre-push
 
 ## CI integration
 
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs three
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs six
 parallel jobs on push and PR:
 
 1. **shellcheck** — same command as `make shellcheck`.
@@ -158,8 +171,14 @@ parallel jobs on push and PR:
    the logic embedded rather than calling the script, so changes to
    the script must be mirrored in the workflow file. See
    [TESTING.md](TESTING.md) for why.)
+4. **typos** — spell check; config `_typos.toml`.
+5. **markdownlint** — markdown style via `markdownlint-cli2`; config
+   `.markdownlint-cli2.jsonc`. Some rules (e.g. MD024 duplicate
+   headings, MD060) are intentionally disabled because they fire on
+   real, correct content — don't re-enable them without checking why.
+6. **actionlint** — lints `.github/workflows/*.yml`.
 
-All three must pass for PRs to be mergeable.
+All six must pass for PRs to be mergeable.
 
 ## What's intentionally not linted
 
@@ -167,6 +186,7 @@ All three must pass for PRs to be mergeable.
   QML, and `qmllint` produces noise on Quickshell idioms (the
   `pluginApi` / `pluginSettings` distinction in particular). We rely on
   Noctalia's hot-reload + manual review instead.
-- **Markdown style** — no `markdownlint` config because the project
-  uses idiomatic prose, not a fixed style guide. Reviewers eyeball.
-- **Spelling** — no `typos` config; spellcheck is reviewer-side.
+
+Markdown style and spelling **are** gated now (`markdownlint-cli2` and
+`typos` — see the table and CI section above); they used to be
+reviewer-side only.
