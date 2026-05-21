@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8] — 2026-05-21
+
+### Added
+
+- **Sleep-on-battery threshold.** New `BATTERY_MIN_PERCENT` config key
+  (default `0` = disabled). When set, `niri-screensaver-launch` skips
+  auto-launch if the machine is running on battery below that percentage,
+  to save power. Plugged in (any AC/Mains adapter online) or no battery
+  present (desktop) never skips; `launch force` overrides the check.
+  Surfaced in the Noctalia plugin as a new **Power** settings section
+  ("Skip on battery below %"), and reported in `niri-screensaver-ctl
+  status` when enabled. Battery state is read from
+  `/sys/class/power_supply/*` by `type` (so adapter/battery naming is
+  irrelevant); multiple batteries use the most-drained one.
+
 ## [0.5.7] — 2026-05-18
 
 ### Documentation
@@ -494,6 +509,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `share/logos/` initial set: Framework square frame, FRAMEWORK wordmark,
   combined.
 
+[0.5.8]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.6...v0.5.7
 [0.5.6]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.5...v0.5.6
 [0.5.5]: https://github.com/jfreed-dev/niri-screensaver/compare/v0.5.4...v0.5.5

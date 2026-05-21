@@ -62,6 +62,7 @@ re-syncs the idle hook.
 |---|---|---|---|
 | Enabled | toggle | (idle customCommands entry) | `true` |
 | Idle threshold (seconds) | spinbox | customCommand `timeout` | `300` |
+| Skip on battery below (%) | spinbox | `BATTERY_MIN_PERCENT` | `0` |
 | Logo file | dropdown | `LOGO_FILE` | _empty_ |
 | Random logo per cycle | toggle | `RANDOM_LOGO` | `false` |
 | Logo directory | text + Browse | `LOGO_DIR` | _empty_ |

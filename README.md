@@ -192,6 +192,7 @@ niri-screensaver-ctl effects        # list all TTE effects
 
 | Key | Default | Notes |
 |-----|---------|-------|
+| `BATTERY_MIN_PERCENT` | `0` | Read by the launcher: skip auto-launch when on battery below this %. `0` disables; plugged in or no battery never skips; `launch force` overrides |
 | `FRAME_RATE` | `60` | TTE frame rate |
 | `INCLUDE_EFFECTS` | _empty_ | Comma-separated effect names; takes precedence over excludes |
 | `EXCLUDE_EFFECTS` | `dev_worm` | Comma-separated effects to skip |
