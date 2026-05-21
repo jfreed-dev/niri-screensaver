@@ -105,6 +105,7 @@ Item {
     var bool = function (b) { return b ? "true" : "false" }
     return [
       "# niri-screensaver config (managed by Noctalia plugin)",
+      "BATTERY_MIN_PERCENT=\"" + _shEscape(s.batteryMinPercent || 0) + "\"",
       "FRAME_RATE=\"" + _shEscape(s.frameRate || 60) + "\"",
       "INCLUDE_EFFECTS=\"" + _shEscape(s.includeEffects) + "\"",
       "EXCLUDE_EFFECTS=\"" + _shEscape(s.excludeEffects) + "\"",

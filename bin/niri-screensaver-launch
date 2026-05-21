@@ -9,9 +9,15 @@
 set -uo pipefail
 
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/niri-screensaver}"
+CONFIG_FILE="${CONFIG_FILE:-${CONFIG_DIR}/config}"
 PID_FILE="${CONFIG_DIR}/screensaver.pid"
 TOGGLE_FILE="${CONFIG_DIR}/disabled"
 LAUNCH_STAMP_FILE="${CONFIG_DIR}/launch.timestamp"
+
+# Power-aware launch gating: skip auto-launch when on battery below this
+# percentage. 0 disables the check. Sourced from the same config file the
+# inner driver reads; the Noctalia plugin writes the key. See load_config.
+BATTERY_MIN_PERCENT="${BATTERY_MIN_PERCENT:-0}"
 
 # Window-rule open-focused + fullscreen surface causes a Wayland focus/enter
 # event that ext-idle-notify-v1 treats as activity. Noctalia (and similar
@@ -56,6 +62,17 @@ log_info()    { echo -e "${CYAN}[INFO]${NC} $*"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $*"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+# Read BATTERY_MIN_PERCENT (and any future launcher-relevant keys) from the
+# shared config file. The Noctalia plugin rewrites every key on each save,
+# including blanks, so re-apply the default when the sourced value is empty.
+load_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        # shellcheck source=/dev/null
+        source "$CONFIG_FILE"
+    fi
+    : "${BATTERY_MIN_PERCENT:=0}"
+}
 
 is_disabled() { [[ -f "$TOGGLE_FILE" ]]; }
 
@@ -129,6 +146,51 @@ warp_cursor_away() {
     return 1
 }
 
+# True (0) if any AC/Mains adapter reports online — i.e. the machine is plugged
+# in. Iterates power_supply class entries by their 'type' so it works regardless
+# of adapter naming (AC, ACAD, ADP1, ...). No power_supply dir (e.g. CI) → false.
+on_ac_power() {
+    local ps pstype online
+    for ps in /sys/class/power_supply/*; do
+        [[ -r "$ps/type" ]] || continue
+        pstype=$(cat "$ps/type" 2>/dev/null)
+        [[ "$pstype" == "Mains" ]] || continue
+        online=$(cat "$ps/online" 2>/dev/null)
+        [[ "$online" == "1" ]] && return 0
+    done
+    return 1
+}
+
+# Echo the lowest battery capacity (%) across all batteries, or nothing if no
+# battery is present (desktop). Multiple batteries → the most-drained one wins.
+lowest_battery_capacity() {
+    local ps pstype cap min=""
+    for ps in /sys/class/power_supply/*; do
+        [[ -r "$ps/type" ]] || continue
+        pstype=$(cat "$ps/type" 2>/dev/null)
+        [[ "$pstype" == "Battery" ]] || continue
+        cap=$(cat "$ps/capacity" 2>/dev/null)
+        [[ "$cap" =~ ^[0-9]+$ ]] || continue
+        if [[ -z "$min" || "$cap" -lt "$min" ]]; then
+            min=$cap
+        fi
+    done
+    [[ -n "$min" ]] && echo "$min"
+}
+
+# True (0) when auto-launch should be skipped to save power: threshold enabled,
+# running on battery, and capacity below the threshold. Plugged in or no battery
+# present → never skip.
+should_skip_for_battery() {
+    [[ "$BATTERY_MIN_PERCENT" =~ ^[0-9]+$ ]] || return 1
+    (( BATTERY_MIN_PERCENT > 0 )) || return 1
+    on_ac_power && return 1
+    local cap
+    cap=$(lowest_battery_capacity)
+    [[ -n "$cap" ]] || return 1
+    (( cap < BATTERY_MIN_PERCENT ))
+}
+
 launch_screensaver() {
     local force=""
     for arg in "$@"; do
@@ -139,6 +201,13 @@ launch_screensaver() {
 
     if [[ "$force" != "force" ]] && is_disabled; then
         log_info "Screensaver disabled. Use 'niri-screensaver-ctl toggle' to enable."
+        exit 0
+    fi
+
+    if [[ "$force" != "force" ]] && should_skip_for_battery; then
+        local cap
+        cap=$(lowest_battery_capacity)
+        log_info "On battery (${cap}%), below ${BATTERY_MIN_PERCENT}% threshold — skipping launch to save power. Use 'launch force' to override."
         exit 0
     fi
 
@@ -213,6 +282,12 @@ show_status() {
         echo -e "Enabled:    ${GREEN}yes${NC}"
     fi
     echo -e "Outputs:    $(count_outputs)"
+    if [[ "$BATTERY_MIN_PERCENT" =~ ^[0-9]+$ ]] && (( BATTERY_MIN_PERCENT > 0 )); then
+        local cap ac
+        cap=$(lowest_battery_capacity)
+        on_ac_power && ac="yes" || ac="no"
+        echo -e "Battery:    skip-launch below ${BATTERY_MIN_PERCENT}% (now: ${cap:-n/a}%, on AC: ${ac})"
+    fi
     echo -e "Driver:     $SCREENSAVER_BIN"
     echo -e "Alacritty:  $ALACRITTY_CONFIG"
     echo -e "Class:      $WINDOW_CLASS"
@@ -240,12 +315,17 @@ Environment:
     NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS Drop 'kill' invocations arriving within this many seconds of 'launch'
                                         (default: 3; set to 0 to disable). Works around the Noctalia/niri
                                         spawn-resume race documented in issue #4.
+    BATTERY_MIN_PERCENT                 Skip auto-launch when on battery below this percentage (default: 0
+                                        = disabled). Plugged in or no battery present never skips; 'launch
+                                        force' overrides. Also a config-file key, which takes precedence
+                                        (the plugin manages it); the env var is the pre-source default.
 EOF
 }
 
 main() {
     local cmd="${1:-launch}"
     shift 2>/dev/null || true
+    load_config
     case "$cmd" in
         launch|run|start) launch_screensaver "$@" ;;
         kill|stop)

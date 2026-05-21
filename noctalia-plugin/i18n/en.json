@@ -14,6 +14,10 @@
     "idle-seconds": "Idle threshold (seconds)",
     "idle-seconds-desc": "Idle time before the screensaver activates.",
 
+    "power-section": "Power",
+    "battery-min-percent": "Skip on battery below (%)",
+    "battery-min-percent-desc": "When on battery and the charge is below this percentage, skip auto-launch to save power. 0 disables the check. Plugged in or no battery present never skips; a manual Trigger now is also gated by this.",
+
     "effects-section": "Effects",
     "include-effects": "Include effects",
     "include-effects-desc": "Restrict to this comma-separated list of TerminalTextEffects names. Empty = all available.",

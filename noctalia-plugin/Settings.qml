@@ -27,6 +27,7 @@ ColumnLayout {
   // ----- Edit-copy properties -----
   property bool   editEnabled:        cfg.enabled        ?? defaults.enabled        ?? true
   property int    editIdleSeconds:    parseInt(cfg.idleSeconds   ?? defaults.idleSeconds   ?? 300)
+  property int    editBatteryMinPercent: parseInt(cfg.batteryMinPercent ?? defaults.batteryMinPercent ?? 0)
   property string editIncludeEffects: cfg.includeEffects ?? defaults.includeEffects ?? ""
   property string editExcludeEffects: cfg.excludeEffects ?? defaults.excludeEffects ?? "dev_worm"
   property string editFadeInEffect:   cfg.fadeInEffect   ?? defaults.fadeInEffect   ?? ""
@@ -59,6 +60,7 @@ ColumnLayout {
     }
     pluginApi.pluginSettings.enabled        = root.editEnabled
     pluginApi.pluginSettings.idleSeconds    = root.editIdleSeconds
+    pluginApi.pluginSettings.batteryMinPercent = root.editBatteryMinPercent
     pluginApi.pluginSettings.includeEffects = root.editIncludeEffects
     pluginApi.pluginSettings.excludeEffects = root.editExcludeEffects
     pluginApi.pluginSettings.fadeInEffect   = root.editFadeInEffect
@@ -155,6 +157,39 @@ ColumnLayout {
         value: root.editIdleSeconds
         defaultValue: root.defaults.idleSeconds
         onValueChanged: root.editIdleSeconds = value
+      }
+    }
+  }
+
+  // ----- Power -----
+  NBox {
+    Layout.fillWidth: true
+    Layout.preferredHeight: powerCol.implicitHeight + Style.marginM * 2
+    color: Color.mSurfaceVariant
+
+    ColumnLayout {
+      id: powerCol
+      anchors.fill: parent
+      anchors.margins: Style.marginM
+      spacing: Style.marginM
+
+      NText {
+        text: pluginApi?.tr("settings.power-section")
+        pointSize: Style.fontSizeL
+        font.weight: Style.fontWeightBold
+        color: Color.mOnSurface
+      }
+
+      NSpinBox {
+        Layout.fillWidth: true
+        label: pluginApi?.tr("settings.battery-min-percent")
+        description: pluginApi?.tr("settings.battery-min-percent-desc")
+        from: 0
+        to: 100
+        stepSize: 5
+        value: root.editBatteryMinPercent
+        defaultValue: root.defaults.batteryMinPercent
+        onValueChanged: root.editBatteryMinPercent = value
       }
     }
   }
