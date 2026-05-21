@@ -20,7 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ("Skip on battery below %"), and reported in `niri-screensaver-ctl
   status` when enabled. Battery state is read from
   `/sys/class/power_supply/*` by `type` (so adapter/battery naming is
-  irrelevant); multiple batteries use the most-drained one.
+  irrelevant); multiple batteries use the most-drained one. Verified
+  end-to-end on real battery power (2026-05-21): the skip fires when on
+  battery below the threshold and correctly proceeds when above-threshold,
+  disabled (`0`), forced (`launch force`), or on AC — and the AC/battery
+  state tracks the adapter live.
 
 ### Fixed
 
