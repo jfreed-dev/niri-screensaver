@@ -139,9 +139,9 @@ Cutting a release:
 | Format | Status | Notes |
 |--------|--------|-------|
 | Source install (`./install.sh`) | **Shipped** | Default path, ~/.local prefix, no privileges needed |
-| Noctalia plugin registry | **Pending** | Plugin meets manifest schema; preview.png needs resize. See [UPSTREAM-SUBMISSION.md](UPSTREAM-SUBMISSION.md). |
-| awesome-niri listing | **Pending** | One-line PR; see [UPSTREAM-SUBMISSION.md](UPSTREAM-SUBMISSION.md). |
-| AUR | **Considered, not shipped** | A `niri-screensaver-git` PKGBUILD would just wrap `install.sh`; defer until there's enough demand. |
+| Noctalia plugin registry | **Submitted** | PR [#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852) open, awaiting maintainer review. See [UPSTREAM-SUBMISSION.md](UPSTREAM-SUBMISSION.md). |
+| awesome-niri listing | **Listed** | Merged via [PR #53](https://github.com/niri-wm/awesome-niri/pull/53). |
+| AUR | **Shipped** | Two packages: `niri-screensaver` (stable, tracks tags) and `niri-screensaver-git` (HEAD). A `v*` tag push auto-syncs the stable package via `aur-publish.yml`; the `-git` package recomputes `pkgver` at build time. |
 | Flatpak / .deb | **Not planned** | The bash CLI works fine via `~/.local`; sandboxing TTE + Alacritty + niri IPC isn't worth the surface area. |
 
 ## Quick reference

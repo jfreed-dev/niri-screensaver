@@ -50,8 +50,9 @@ with `[bug]` are confirmed defects.
 
 ## Ops / packaging
 
-- AUR package once the API stabilizes (depends on
-  `python-terminaltexteffects`, `alacritty`, `niri`).
+(nothing open — AUR packages (`niri-screensaver` + `-git`) are shipped and
+auto-publish on tag; registry submission and awesome-niri listing are tracked
+in [docs/development/WORKFLOW.md](docs/development/WORKFLOW.md).)
 
 ## Notes for maintainers
 
