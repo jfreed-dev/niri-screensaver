@@ -401,7 +401,7 @@ ColumnLayout {
   // ---- Logo directory picker popup ----
   NFilePicker {
     id: logoDirPicker
-    title: pluginApi?.tr("settings.logo-dir-picker-title") || "Pick a logo directory"
+    title: pluginApi?.tr("settings.logo-dir-picker-title")
     selectionMode: "folders"
     initialPath: (root.editLogoDir && root.editLogoDir !== "")
       ? root.editLogoDir
@@ -434,7 +434,7 @@ ColumnLayout {
       })
       names.sort()
       effectOptions.clear()
-      effectOptions.append({key: "", name: pluginApi?.tr("settings.effect-none") || "(none)"})
+      effectOptions.append({key: "", name: pluginApi?.tr("settings.effect-none")})
       for (var i = 0; i < names.length; i++) {
         effectOptions.append({key: names[i], name: names[i]})
       }
@@ -480,7 +480,7 @@ ColumnLayout {
 
   function _rebuildLogoOptions() {
     logoOptions.clear()
-    logoOptions.append({key: "", name: pluginApi?.tr("settings.logo-path-default") || "(default)"})
+    logoOptions.append({key: "", name: pluginApi?.tr("settings.logo-path-default")})
     var seen = {"": true}
     for (var i = 0; i < logoFolderModel.count; i++) {
       var fileName = String(logoFolderModel.get(i, "fileName"))
@@ -505,7 +505,7 @@ ColumnLayout {
 
     // Seed the "(none)" entry so the comboboxes have something to show
     // before the effects-detection Process returns.
-    effectOptions.append({key: "", name: pluginApi?.tr("settings.effect-none") || "(none)"})
+    effectOptions.append({key: "", name: pluginApi?.tr("settings.effect-none")})
     effectsDetectProcess.command = ["sh", "-c",
       "niri-screensaver-ctl effects 2>/dev/null | tail -n +3 | tr -s ' \\t' '\\n' | grep -v '^$'"]
     effectsDetectProcess.running = true
