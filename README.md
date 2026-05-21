@@ -151,6 +151,11 @@ Then enable it in **Noctalia → Settings → Plugins**.
 
 ### Option B — Install from the Noctalia plugin registry (any distro)
 
+> **Pending registry acceptance.** Until
+> [noctalia-plugins#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852)
+> merges, `niri-screensaver` won't appear in the registry browser yet — use
+> Option A (AUR) or Option C below in the meantime.
+
 Open **Noctalia → Settings → Plugins**, find `niri-screensaver` in the
 registry browser, install. The plugin lands in
 `~/.config/noctalia/plugins/`.

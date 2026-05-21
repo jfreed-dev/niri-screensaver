@@ -8,6 +8,18 @@ with `[bug]` are confirmed defects.
 
 (none currently tracked)
 
+### Resolved
+
+- **[fixed] Launch/kill race under idle daemons (v0.5.1, #4).** Noctalia — and
+  likely any idle daemon that pairs a `launchCommand` with a `resumeCommand` —
+  fired the resume (`niri-screensaver-launch kill`) within ~1s of launch:
+  spawning the fullscreen Alacritty triggers a Wayland focus/input event that
+  `ext-idle-notify-v1` reports as activity, so the screensaver flashed and died
+  before rendering. Fixed by debouncing in `niri-screensaver-launch` — a `kill`
+  arriving within `NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS` (default `3`) of `launch`
+  is dropped (`kill_too_soon_after_launch()` checks the `launch.timestamp` stamp
+  file; set the env var to `0` to disable).
+
 ## Untested integration paths
 
 - **[?] Lock-screen interplay.** `Main.qml` already wires `screenLock` /

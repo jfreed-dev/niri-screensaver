@@ -13,9 +13,21 @@ first** — getting indexed in Noctalia's Plugin Manager surfaces the
 project to the most relevant audience. The awesome-niri PR is a
 one-liner you can do anytime after.
 
+> **Status (2026-05-20):** Path A is submitted as
+> [noctalia-plugins#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852)
+> — **open, awaiting maintainer review**. Path B is **merged** as
+> [awesome-niri#53](https://github.com/niri-wm/awesome-niri/pull/53). The steps
+> below are retained as the submission playbook — they also cover re-submission
+> and routine per-release updates.
+
 ---
 
 ## Path A — noctalia-dev/noctalia-plugins (primary)
+
+> **Status:** Submitted as
+> [#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852); open,
+> awaiting maintainer review. The `preview.png` (960×540) and manifest checks
+> below are already satisfied.
 
 Noctalia's Plugin Manager pulls plugins from the registry repo, so
 landing here makes installation a one-click flow for users.
@@ -135,6 +147,10 @@ so you don't edit that file by hand.
 ---
 
 ## Path B — niri-wm/awesome-niri
+
+> **Status:** Merged as
+> [#53](https://github.com/niri-wm/awesome-niri/pull/53). The steps below are
+> retained for reference and future link/description updates.
 
 A one-line entry in the curated list at
 <https://github.com/niri-wm/awesome-niri>.
