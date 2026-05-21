@@ -43,6 +43,15 @@ with `[bug]` are confirmed defects.
   monitor on USB-C). Edge cases:
   - Plug/unplug a monitor while the screensaver is running.
   - Outputs with very different DPIs.
+- **[?] Real low-battery skip (v0.5.8).** `BATTERY_MIN_PERCENT` was
+  verified on real battery power, but only *synthetically* — the
+  threshold was set above the current charge to exercise the "below
+  threshold" path. The decision logic (`should_skip_for_battery`),
+  AC-vs-battery detection, the `force` override, and the disabled (`0`)
+  case are all confirmed. What's untested end-to-end: a normally-set
+  threshold (e.g. `20`) being crossed by the battery *actually draining*
+  over hours mid-idle, then a real idle event firing the skip. Same code
+  path, so low risk — noted for completeness.
 
 ## Feature backlog
 
