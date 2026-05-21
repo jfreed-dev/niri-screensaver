@@ -40,6 +40,11 @@ DISMISS_ON_KEY="${DISMISS_ON_KEY:-true}"
 RANDOM_LOGO="${RANDOM_LOGO:-false}"
 LOGO_DIR="${LOGO_DIR:-}"
 
+# Cached by check_dependencies: "--no-restore-cursor" when the installed tte
+# supports it and we're hiding the cursor, else empty. tte otherwise re-shows
+# the cursor when an effect ends, flashing a white cursor block between effects.
+NO_RESTORE_CURSOR_ARG=""
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -102,6 +107,12 @@ check_dependencies() {
         log_info "Install with: pipx install terminaltexteffects"
         exit 1
     fi
+    # tte re-shows the cursor when an effect ends; while we own cursor hiding
+    # that flashes a white cursor block between effects. Suppress it when the
+    # installed tte supports the flag (older versions don't) and CURSOR_HIDE is on.
+    if [[ "$CURSOR_HIDE" != "false" ]] && tte --help 2>&1 | grep -q -- '--no-restore-cursor'; then
+        NO_RESTORE_CURSOR_ARG="--no-restore-cursor"
+    fi
 }
 
 get_effects() {
@@ -149,11 +160,12 @@ run_fade_in() {
     local logo_file="$1" effect="${FADE_IN_EFFECT:-}"
     [[ -z "$effect" ]] && return 0
     clear
+    # shellcheck disable=SC2086
     tte -i "$logo_file" \
         --frame-rate "$FRAME_RATE" \
         --canvas-width 0 --canvas-height 0 \
         --anchor-canvas c --anchor-text c \
-        "$effect" 2>/dev/null
+        $NO_RESTORE_CURSOR_ARG "$effect" 2>/dev/null
     sleep 0.5
 }
 
@@ -161,11 +173,12 @@ run_fade_out() {
     local logo_file="$1" effect="${FADE_OUT_EFFECT:-}"
     [[ -z "$effect" ]] && return 0
     clear
+    # shellcheck disable=SC2086
     tte -i "$logo_file" \
         --frame-rate "$FRAME_RATE" \
         --canvas-width 0 --canvas-height 0 \
         --anchor-canvas c --anchor-text c \
-        "$effect" 2>/dev/null
+        $NO_RESTORE_CURSOR_ARG "$effect" 2>/dev/null
 }
 
 # Render a string centered on the terminal. Uses figlet with CLOCK_FONT when
@@ -309,7 +322,7 @@ run_screensaver() {
 
         # shellcheck disable=SC2086
         tte -i "$logo_file" \
-            --random-effect $effect_args \
+            --random-effect $effect_args $NO_RESTORE_CURSOR_ARG \
             --frame-rate "$FRAME_RATE" \
             --canvas-width 0 --canvas-height 0 \
             --anchor-canvas c --anchor-text c \
@@ -365,15 +378,16 @@ run_single_effect() {
     effect_args=$(build_effect_args)
 
     if [[ -n "$effect" ]]; then
+        # shellcheck disable=SC2086
         tte -i "$logo_file" \
             --frame-rate "$FRAME_RATE" \
             --canvas-width 0 --canvas-height 0 \
             --anchor-canvas c --anchor-text c \
-            "$effect" </dev/null
+            $NO_RESTORE_CURSOR_ARG "$effect" </dev/null
     else
         # shellcheck disable=SC2086
         tte -i "$logo_file" \
-            --random-effect $effect_args \
+            --random-effect $effect_args $NO_RESTORE_CURSOR_ARG \
             --frame-rate "$FRAME_RATE" \
             --canvas-width 0 --canvas-height 0 \
             --anchor-canvas c --anchor-text c </dev/null
