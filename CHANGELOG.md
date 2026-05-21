@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/sys/class/power_supply/*` by `type` (so adapter/battery naming is
   irrelevant); multiple batteries use the most-drained one.
 
+### Fixed
+
+- `niri-screensaver-ctl effects` listed every TTE effect twice. `tte -h`
+  prints the `{beams,...}` choices block twice (usage line + positional
+  args); `get_effects` now takes only the first occurrence (`grep -m1`).
+
 ## [0.5.7] — 2026-05-18
 
 ### Documentation
