@@ -105,7 +105,9 @@ check_dependencies() {
 }
 
 get_effects() {
-    tte -h 2>&1 | grep -oE '\{beams,[^}]+\}' | tr -d '{}' | tr ',' '\n'
+    # tte -h prints the {beams,...} choices block twice (usage line + positional
+    # args); -m1 takes only the first so effects aren't listed in duplicate.
+    tte -h 2>&1 | grep -m1 -oE '\{beams,[^}]+\}' | tr -d '{}' | tr ',' '\n'
 }
 
 prepare_terminal() {
