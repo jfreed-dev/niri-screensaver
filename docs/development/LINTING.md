@@ -51,8 +51,10 @@ shellcheck -x bin/niri-screensaver bin/niri-screensaver-launch \
 ```
 
 The `-x` flag tells shellcheck to follow `source`/`.` directives across
-files. We don't currently use it, but it costs nothing and future-proofs
-against script-splitting.
+files. The scripts only `source` the user config dynamically (tagged
+`# shellcheck source=/dev/null`, so it isn't followed), so `-x` has
+nothing to chase today — but it costs nothing and future-proofs against
+splitting the scripts into sourced libraries.
 
 ### What we accept
 
@@ -166,11 +168,8 @@ parallel jobs on push and PR:
 
 1. **shellcheck** — same command as `make shellcheck`.
 2. **json-validate** — same loop as `make json-validate`.
-3. **doc-links** — inline copy of the same logic as
-   `make doc-links` / `scripts/check-doc-links.sh`. (The CI job has
-   the logic embedded rather than calling the script, so changes to
-   the script must be mirrored in the workflow file. See
-   [TESTING.md](TESTING.md) for why.)
+3. **doc-links** — runs `scripts/check-doc-links.sh`, the same script
+   as `make doc-links`.
 4. **typos** — spell check; config `_typos.toml`.
 5. **markdownlint** — markdown style via `markdownlint-cli2`; config
    `.markdownlint-cli2.jsonc`. Some rules (e.g. MD024 duplicate

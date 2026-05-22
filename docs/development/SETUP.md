@@ -10,7 +10,7 @@ runtime tooling installed."
 ### Operating System
 
 - Any Linux distribution running a Wayland session under
-  [niri](https://github.com/niri-wm/niri).
+  [niri](https://github.com/YaLTeR/niri).
 - Tested on CachyOS / Arch Linux. Should work on any distro that ships
   niri 0.x and the runtime dependencies below.
 
@@ -18,7 +18,7 @@ runtime tooling installed."
 
 | Tool | Why it's needed | Where to get it |
 |------|-----------------|-----------------|
-| niri | The compositor — only needed for full fullscreen runs (`niri-screensaver-ctl launch`). Inline `test` does not require niri. | <https://github.com/niri-wm/niri> |
+| niri | The compositor — only needed for full fullscreen runs (`niri-screensaver-ctl launch`). Inline `test` does not require niri. | <https://github.com/YaLTeR/niri> |
 | alacritty | Each fullscreen surface is an Alacritty window with `--class niri-screensaver`. | distro packages |
 | terminaltexteffects (`tte`) | The animation engine. | `pip install --user terminaltexteffects` |
 | jq | The launcher parses `niri msg --json outputs` to enumerate displays. | distro packages |
@@ -29,7 +29,7 @@ For the Noctalia plugin side:
 
 | Tool | Why |
 |------|-----|
-| [Noctalia](https://github.com/Ly-sec/Noctalia) | The shell that hosts the QML plugin. |
+| [Noctalia](https://github.com/noctalia-dev/noctalia-shell) | The shell that hosts the QML plugin. |
 | Quickshell (`qs`) | What Noctalia is built on; needed if you want to manually re-launch the shell. |
 
 ### Required dev tools (CI parity)
@@ -107,9 +107,9 @@ own plugin install flow against the `noctalia-plugin/` directory.
 The launcher and the inner driver both resolve sibling assets (the
 alacritty config, the logos directory) through this candidate list:
 
-1. `$NIRI_SCREENSAVER_DATA` (if set)
-2. `$XDG_DATA_HOME/niri-screensaver` or `~/.local/share/niri-screensaver`
-3. `<script-dir>/../share/niri-screensaver` — the dev-checkout fallback
+1. `$NIRI_SCREENSAVER_DATA` if set, else `/usr/share/niri-screensaver`
+2. `~/.local/share/niri-screensaver`
+3. `<script-dir>/../share` — the dev-checkout fallback
 
 For dev work where you want to use the in-tree assets without running
 `make install`, export `NIRI_SCREENSAVER_DATA=$PWD/share`. New assets

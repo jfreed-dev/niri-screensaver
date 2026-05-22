@@ -1,6 +1,6 @@
 # Niri Screensaver
 
-Idle-aware terminal screensaver for [niri](https://github.com/niri-wm/niri),
+Idle-aware terminal screensaver for [niri](https://github.com/YaLTeR/niri),
 driven by [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects)
 and rendered in a fullscreen Alacritty surface.
 
