@@ -24,7 +24,7 @@ open an issue at
 | `niri-tiles.txt` | Original artistic representation of niri's scrolling-tile workspace layout. CC0 / public domain dedication for this file. |
 | `niri-name-with-tiles.txt` | Composition of `niri-tiles.txt` + the wordmark. |
 
-niri itself is hosted at <https://github.com/niri-wm/niri> (GPL-3.0).
+niri itself is hosted at <https://github.com/YaLTeR/niri> (GPL-3.0).
 "niri" is a project name belonging to the niri community; trademark
 status is informal / not registered to our knowledge. These files are
 provided in good faith as community artwork.
