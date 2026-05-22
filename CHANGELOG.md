@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A white cursor block briefly flashed at the end of each effect, just before
+  the screensaver transitioned to the next one. `tte` re-shows the terminal
+  cursor when an effect finishes, undoing our `tput civis`, and it lingered
+  until the next loop iteration re-hid it. The driver now passes
+  `--no-restore-cursor` to `tte` (when supported and `CURSOR_HIDE` is on) so the
+  cursor stays hidden across the whole run.
+
 ## [0.5.8] — 2026-05-21
 
 ### Added
