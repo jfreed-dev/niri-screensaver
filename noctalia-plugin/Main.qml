@@ -129,6 +129,7 @@ Item {
       "DISMISS_ON_KEY=\"" + bool(s.dismissOnKey) + "\"",
       "RANDOM_LOGO=\"" + bool(s.randomLogo) + "\"",
       "LOGO_DIR=\"" + _shEscape(s.logoDir) + "\"",
+      "MULTI_MONITOR_MODE=\"" + _shEscape(s.multiMonitorMode || "independent") + "\"",
       ""
     ].join("\n")
   }

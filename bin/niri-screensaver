@@ -43,6 +43,21 @@ DISMISS_ON_KEY="${DISMISS_ON_KEY:-true}"
 RANDOM_LOGO="${RANDOM_LOGO:-false}"
 LOGO_DIR="${LOGO_DIR:-}"
 
+# Base seed for tte's RNG. Empty = independent (each run randomizes on its own,
+# the default). When set (the launcher passes one shared value to every monitor
+# in "mirror" multi-monitor mode), each effect window uses BASE_SEED + window,
+# where window = wall-clock-seconds / MIRROR_INTERVAL. Deriving the window from
+# the shared wall clock (rather than a per-process counter) is what keeps the
+# monitors picking the SAME effect at the same time — a local counter drifts
+# because the surfaces spawn at different moments and effects animate for
+# different durations. See --seed.
+SEED="${SEED:-}"
+
+# Mirror mode: seconds per effect window. All monitors switch to a new effect on
+# the same wall-clock boundary. Smaller = effects change faster (and replay less
+# within a window); larger = each effect lingers longer.
+MIRROR_INTERVAL="${MIRROR_INTERVAL:-8}"
+
 # Cached by check_dependencies: "--no-restore-cursor" when the installed tte
 # supports it and we're hiding the cursor, else empty. tte otherwise re-shows
 # the cursor when an effect ends, flashing a white cursor block between effects.
@@ -80,6 +95,9 @@ load_config() {
     : "${CURSOR_HIDE:=true}"
     : "${DISMISS_ON_KEY:=true}"
     : "${RANDOM_LOGO:=false}"
+    : "${MIRROR_INTERVAL:=8}"
+    # Must be a positive integer — it's a divisor for the wall-clock window.
+    [[ "$MIRROR_INTERVAL" =~ ^[1-9][0-9]*$ ]] || MIRROR_INTERVAL=8
     # LOGO_DIR is left empty by default; resolve_logo_dir() figures it out lazily.
 }
 
@@ -339,10 +357,22 @@ run_screensaver() {
     while true; do
         # Re-roll the logo per effect cycle when RANDOM_LOGO is on. Falls back
         # silently to the configured logo_file if the directory has no .txt files.
-        if [[ "$RANDOM_LOGO" == "true" ]]; then
+        # Skipped in mirror mode (SEED set): all monitors must show one shared
+        # logo, which the launcher passes via --logo.
+        if [[ "$RANDOM_LOGO" == "true" && -z "$SEED" ]]; then
             local picked
             picked="$(pick_random_logo)" && [[ -f "$picked" ]] && logo_file="$picked"
             CURRENT_LOGO_FILE="$logo_file"
+        fi
+
+        # Mirror mode: seed tte's RNG from a wall-clock window so every monitor
+        # picks the same effect at the same time, regardless of when each surface
+        # started or how long its effects ran. Independent mode (no SEED): omit
+        # the flag so each monitor randomizes on its own.
+        local seed_arg=""
+        if [[ -n "$SEED" ]]; then
+            local window=$(( $(date +%s) / MIRROR_INTERVAL ))
+            seed_arg="--seed $(( SEED + window ))"
         fi
 
         display_clock
@@ -355,7 +385,7 @@ run_screensaver() {
 
         # shellcheck disable=SC2086
         tte -i "$logo_file" \
-            --random-effect $effect_args $NO_RESTORE_CURSOR_ARG \
+            --random-effect $effect_args $seed_arg $NO_RESTORE_CURSOR_ARG \
             --frame-rate "$FRAME_RATE" \
             --canvas-width 0 --canvas-height 0 \
             --anchor-canvas c --anchor-text c \
@@ -452,6 +482,10 @@ Commands:
 Options:
     -l, --logo FILE     Use a specific logo file
     -f, --fps NUMBER    Set frame rate (default: 60)
+    -s, --seed NUMBER   Base RNG seed for tte (mirror mode). When set, each
+                        effect cycle uses SEED+cycle, so monitors sharing the
+                        seed render identical animations. The launcher passes
+                        this in mirror multi-monitor mode; rarely set by hand.
 
 Environment Variables:
     SCREENSAVER_DIR     Config directory (default: ~/.config/niri-screensaver)
@@ -478,6 +512,7 @@ main() {
         case "$1" in
             -l|--logo) LOGO_FILE="$2"; shift 2 ;;
             -f|--fps)  FRAME_RATE="$2"; shift 2 ;;
+            -s|--seed) SEED="$2"; shift 2 ;;
             -h|--help) usage; exit 0 ;;
             -*)        log_error "Unknown option: $1"; usage; exit 1 ;;
             *)         break ;;
