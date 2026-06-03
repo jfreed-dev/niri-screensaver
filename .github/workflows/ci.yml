@@ -73,9 +73,11 @@ jobs:
   # Unit-test the bash with bats and measure line coverage with kcov, then
   # upload to Codecov. Runs on a GitHub-hosted runner (not self-hosted) so the
   # bats+kcov toolchain comes from apt rather than being a runner prerequisite.
+  # Pinned to 22.04: kcov was dropped from the 24.04 (noble) archive. The tests
+  # manage their own temp dirs, so jammy's older bats (1.2.1) is fine.
   coverage:
     name: coverage (bats + kcov)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
       - name: Install bats + kcov

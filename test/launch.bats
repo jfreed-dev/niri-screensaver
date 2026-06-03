@@ -4,9 +4,14 @@
 
 setup() {
     load test_helper
-    export CONFIG_DIR="$BATS_TEST_TMPDIR/cfg"
+    TEST_TMP="$(mktemp -d)"
+    export CONFIG_DIR="$TEST_TMP/cfg"
     mkdir -p "$CONFIG_DIR"
     source_launcher
+}
+
+teardown() {
+    rm -rf "$TEST_TMP"
 }
 
 # ---------- toggle state ----------
@@ -68,7 +73,7 @@ setup() {
 # ---------- mirror-mode argument assembly ----------
 
 @test "mirror_logo_dir: prefers an explicit LOGO_DIR that exists" {
-    local d="$BATS_TEST_TMPDIR/logos"
+    local d="$TEST_TMP/logos"
     mkdir -p "$d"
     LOGO_DIR="$d"
     run mirror_logo_dir
@@ -77,7 +82,7 @@ setup() {
 }
 
 @test "pick_one_logo: returns a .txt path from the logo dir" {
-    local d="$BATS_TEST_TMPDIR/logos"
+    local d="$TEST_TMP/logos"
     mkdir -p "$d"
     : > "$d/x.txt"
     LOGO_DIR="$d"
@@ -104,10 +109,10 @@ setup() {
 # ---------- data-dir resolution ----------
 
 @test "resolve_data_dir: finds the dir containing alacritty-screensaver.toml" {
-    local d="$BATS_TEST_TMPDIR/data"
+    local d="$TEST_TMP/data"
     mkdir -p "$d"
     : > "$d/alacritty-screensaver.toml"
-    DATA_CANDIDATES=("$BATS_TEST_TMPDIR/none" "$d")
+    DATA_CANDIDATES=("$TEST_TMP/none" "$d")
     run resolve_data_dir
     [ "$status" -eq 0 ]
     [ "$output" = "$d" ]
