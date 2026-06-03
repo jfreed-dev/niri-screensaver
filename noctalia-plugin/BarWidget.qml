@@ -1,6 +1,6 @@
 // BarWidget.qml - status-bar entry for niri-screensaver
 //
-// Click       → launch the screensaver immediately.
+// Click       → smart toggle: launch if stopped, stop if already running.
 // Right-click → context menu: Trigger / Stop / Open Settings / Toggle enabled.
 //
 // Renders a custom monitor-with-image SVG (assets/screensaver.svg) recolored
@@ -94,6 +94,24 @@ Item {
     killProc.running = true
   }
 
+  // Smart left-click: probe running state, then stop if running else launch.
+  // The probe (`niri-screensaver-launch is-running`) exits 0 when running, so
+  // we branch in onExited. Falling back to launch on a probe error keeps the
+  // click useful even if the status command is somehow unavailable.
+  Process {
+    id: statusProbe
+    onExited: function (code) {
+      if (code === 0) root._runKill()
+      else root._runLaunch()
+    }
+  }
+  function _smartToggle() {
+    var argv = root.mainInstance ? root.mainInstance._statusArgv()
+                                 : ["niri-screensaver-launch", "is-running"]
+    statusProbe.command = argv
+    statusProbe.running = true
+  }
+
   NPopupContextMenu {
     id: contextMenu
     model: [
@@ -146,7 +164,7 @@ Item {
       if (mouse.button === Qt.RightButton) {
         PanelService.showContextMenu(contextMenu, root, screen)
       } else {
-        root._runLaunch()
+        root._smartToggle()
       }
     }
   }

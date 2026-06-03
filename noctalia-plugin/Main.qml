@@ -98,6 +98,13 @@ Item {
       ["niri-screensaver-launch", "kill"]
     )
   }
+  // Quiet running-state probe for the bar widget's smart left-click toggle:
+  // exit 0 if running, 1 if not. Uses the standard launcher on PATH (a fully
+  // custom launcherCommand is rare and the launcher name is stable), so the
+  // widget can decide whether a click should launch or stop.
+  function _statusArgv() {
+    return ["niri-screensaver-launch", "is-running"]
+  }
 
   // ----- Shell config writer -----
   function _renderShellConfig() {

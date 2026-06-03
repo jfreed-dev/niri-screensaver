@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Bar widget: left-click is now a smart toggle.** Clicking the Noctalia bar
+  widget previously always launched the screensaver; it now stops it if it's
+  already running and launches it otherwise, so it no longer has to be killed
+  from a menu or the CLI. Backed by a new quiet `niri-screensaver-launch
+  is-running` command (exit 0 if running, 1 if not; also forwarded by
+  `niri-screensaver-ctl`) that the widget probes on click. Right-click still
+  opens the full Trigger / Stop / Toggle / Settings menu.
+
 ### Fixed
 
 - **Multi-monitor: surfaces no longer collapse onto one output under
