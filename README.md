@@ -181,10 +181,24 @@ niri-screensaver-ctl launch    # trigger now
 niri-screensaver-ctl kill      # stop
 niri-screensaver-ctl status    # report state
 niri-screensaver-ctl toggle    # disable / re-enable the launcher
+niri-screensaver-ctl is-running # exit 0 if running, 1 if not (quiet; for scripts)
 niri-screensaver-ctl test           # run a single random effect inline (no fullscreen)
 niri-screensaver-ctl preview rain   # preview a specific named effect inline
 niri-screensaver-ctl effects        # list all TTE effects
 ```
+
+### Multi-monitor
+
+The launcher covers **every** output with its own fullscreen surface, pinning
+each by window id so placement is correct even under niri's
+`focus-follows-mouse`. Dismissing any one screen (key or mouse) wakes **all** of
+them.
+
+By default each output runs **independently** — a different random effect per
+screen. Set `MULTI_MONITOR_MODE=mirror` (config, or the plugin's **Multi-monitor
+mode** dropdown) to show the **same** effect on every output instead. Mirroring
+is exact on monitors of the same resolution; on mismatched resolutions the same
+effect plays but the layout differs (the canvas tracks each terminal's size).
 
 ## Configuration
 

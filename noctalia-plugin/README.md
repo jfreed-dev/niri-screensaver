@@ -16,8 +16,13 @@ and rendered in a fullscreen Alacritty surface.
   tears down cleanly when Noctalia's lock fires (avoids burning CPU under the
   lock surface). Only writes to hook slots that are empty or already hold the
   plugin's command — never clobbers a hook you authored manually.
-- **Bar widget**: click to trigger; right-click for stop / toggle enabled /
-  open settings. Recolors to follow the active Noctalia theme.
+- **Bar widget**: left-click is a smart toggle — launches the screensaver if
+  it's stopped, stops it if it's running (via a quiet `niri-screensaver-launch
+  is-running` probe). Right-click opens a menu: **Trigger now**, **Stop**,
+  **Quit** (stop *and* disable so idle won't relaunch it), **Reload** (stop,
+  restart the Noctalia shell so the systray reappears, and re-enable),
+  **Toggle enabled**, and **Open settings**. Recolors to follow the active
+  Noctalia theme.
 - **Settings tab** for idle threshold, effect include/exclude lists,
   fade-in/out **dropdowns** populated from `niri-screensaver-ctl effects`,
   a **logo file dropdown** that auto-refreshes from your logo directory,
