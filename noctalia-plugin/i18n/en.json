@@ -68,6 +68,8 @@
     "tooltip": "Niri Screensaver",
     "trigger": "Trigger now",
     "stop": "Stop",
+    "quit": "Quit (stop & disable)",
+    "reload": "Reload shell",
     "toggle": "Toggle enabled",
     "settings": "Open settings"
   }
