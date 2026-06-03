@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NIRI_SCREENSAVER_SPAWN_PIN_TIMEOUT_SECS` env var (default `2`) bounds how long
   the launcher waits for each surface to appear before moving on. Thanks to
   @landryjeanluc for the report and root-cause analysis (#11).
+- **Multi-monitor: dismissing one screen now wakes all of them.** Each output
+  runs its own driver in its own terminal, and a keypress only reaches the
+  focused one — so on a multi-monitor setup, dismissing the active screen left
+  the others still running the screensaver. The driver now broadcasts a
+  terminate to its sibling instances on dismiss (`dismiss_all` →
+  `terminate_sibling_drivers`, which SIGTERMs the other `niri-screensaver run`
+  processes via a `/proc` scan that skips its own PID). Siblings exit through
+  the normal signal path and do not re-broadcast, so there is no signal storm.
+  Surfaced once #11's fix made surfaces actually spread across outputs.
 
 ## [0.5.9] — 2026-05-22
 
