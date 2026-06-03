@@ -1,0 +1,27 @@
+# Codecov configuration. Coverage comes from kcov instrumenting the bats unit
+# suite (see the `coverage` job in .github/workflows/ci.yml). Only the shipped
+# bash lives under bin/ and scripts/; QML is not covered (Quickshell QML isn't
+# unit-testable here — see docs/development/LINTING.md).
+#
+# Statuses are informational so a coverage dip never blocks a merge — the gate
+# is the bats suite passing in CI, not a coverage number.
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "reach, diff, files"
+  require_changes: true
+
+ignore:
+  - "noctalia-plugin/**"
+  - "packaging/**"
+  - "docs/**"
+  - "test/**"

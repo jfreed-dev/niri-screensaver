@@ -6,7 +6,8 @@ What `make check` runs, why, and how to extend it.
 
 There is no compile step in this project. Quality gates run on the
 *source files we ship* — bash, JSON (manifest + i18n), markdown, GitHub
-Actions workflows, and prose. The same six jobs run in CI
+Actions workflows, and prose — plus a bats unit suite over the bash. The
+same jobs run in CI
 ([.github/workflows/ci.yml](../../.github/workflows/ci.yml)) so local
 parity is one `make check` away.
 
@@ -18,6 +19,7 @@ parity is one `make check` away.
 | `typos` | Source + prose spell checker | Config: `_typos.toml` |
 | `markdownlint-cli2` | Markdown style | Config: `.markdownlint-cli2.jsonc` (MD024/MD060 disabled — see note below) |
 | `actionlint` | GitHub Actions workflow linter | `.github/workflows/*.yml` |
+| `bats` + `kcov` | Unit tests + line coverage of the bash | `test/`; coverage uploaded to Codecov (`codecov.yml`) |
 | `.editorconfig` | Whitespace conventions across languages | Enforced by editor; not a CI gate |
 
 ## Quick commands
@@ -30,6 +32,8 @@ make doc-links              # docs only
 make typos                  # spell check only
 make markdownlint           # markdown style only
 make actionlint             # workflow lint only
+make unit                   # bats unit tests only
+make coverage               # bats under kcov → coverage/
 
 make health-quick           # check + structural sanity (no runtime)
 make health                 # adds runtime/integration checks
@@ -163,8 +167,8 @@ chmod +x .git/hooks/pre-push
 
 ## CI integration
 
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs six
-parallel jobs on push and PR:
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs these
+jobs on push and PR:
 
 1. **shellcheck** — same command as `make shellcheck`.
 2. **json-validate** — same loop as `make json-validate`.
@@ -176,8 +180,13 @@ parallel jobs on push and PR:
    headings, MD060) are intentionally disabled because they fire on
    real, correct content — don't re-enable them without checking why.
 6. **actionlint** — lints `.github/workflows/*.yml`.
+7. **coverage** — runs `bats test/` under `kcov` and uploads to Codecov.
+   Unlike the others it runs on a GitHub-hosted runner (the rest are
+   self-hosted) so the bats+kcov toolchain comes from apt.
 
-All six must pass for PRs to be mergeable.
+`main` is branch-protected: the six static gates are required to pass before a
+PR merges. Coverage upload is non-blocking (a Codecov outage won't fail the
+build), but the bats suite itself must pass.
 
 ## What's intentionally not linted
 

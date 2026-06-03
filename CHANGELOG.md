@@ -5,6 +5,24 @@ All notable changes to **niri-screensaver** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] — 2026-06-03
+
+### Added
+
+- **Bats unit tests + kcov coverage.** A `test/` suite asserts the bash scripts'
+  pure functions — effect-arg building, `load_config` defaulting, logo
+  resolution/picking, toggle state, the kill-debounce (#4), battery gating, and
+  mirror-mode argument assembly. Both bin scripts now guard `main "$@"` so they
+  can be sourced for testing. A new CI job runs the suite under `kcov` and
+  uploads line coverage to Codecov; `make unit` and `make coverage` run it
+  locally (both skip with a hint when the tool is missing, same as the linters).
+
+### Changed
+
+- **Security and dev docs refreshed.** `SECURITY.md` now lists 0.6.x as
+  supported (was 0.3.x) and documents the CI gates that guard the codebase.
+  `TESTING.md` and `LINTING.md` cover the new unit suite and the coverage job.
+
 ## [0.6.0] — 2026-06-03
 
 ### Added

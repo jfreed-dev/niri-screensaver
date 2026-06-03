@@ -69,3 +69,28 @@ jobs:
       - name: Check workflow files
         run: ${{ steps.get_actionlint.outputs.executable }} -color
         shell: bash
+
+  # Unit-test the bash with bats and measure line coverage with kcov, then
+  # upload to Codecov. Runs on a GitHub-hosted runner (not self-hosted) so the
+  # bats+kcov toolchain comes from apt rather than being a runner prerequisite.
+  coverage:
+    name: coverage (bats + kcov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install bats + kcov
+        run: sudo apt-get update && sudo apt-get install -y bats kcov
+      - name: Run bats under kcov
+        run: |
+          mkdir -p coverage
+          kcov --clean \
+            --include-path="${GITHUB_WORKSPACE}/bin,${GITHUB_WORKSPACE}/scripts" \
+            "${GITHUB_WORKSPACE}/coverage" \
+            bats test/
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: coverage
+          fail_ci_if_error: false
+          verbose: true
