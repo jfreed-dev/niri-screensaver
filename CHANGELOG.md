@@ -5,6 +5,35 @@ All notable changes to **niri-screensaver** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Multi-monitor: surfaces no longer collapse onto one output under
+  `focus-follows-mouse`.** `niri-screensaver-launch` previously spread one
+  Alacritty per output by cycling *keyboard* focus
+  (`niri msg action focus-monitor-next`) between spawns. With niri's
+  `input { focus-follows-mouse }`, window placement follows the *pointer*, not
+  keyboard focus, and the pointer isn't parked until after the spawn loop — so
+  every surface opened on the cursor's monitor and the others stayed blank. The
+  launcher now enumerates outputs once up front and pins each spawned surface to
+  its target output by window id
+  (`niri msg action move-window-to-monitor --id <id> <output>`), which is
+  independent of pointer/keyboard focus. Outputs are enumerated a single time so
+  N>2 monitors and mid-launch hotplug are handled deterministically. A new
+  `NIRI_SCREENSAVER_SPAWN_PIN_TIMEOUT_SECS` env var (default `2`) bounds how long
+  the launcher waits for each surface to appear before moving on. Thanks to
+  @landryjeanluc for the report and root-cause analysis (#11).
+- **Multi-monitor: dismissing one screen now wakes all of them.** Each output
+  runs its own driver in its own terminal, and a keypress only reaches the
+  focused one — so on a multi-monitor setup, dismissing the active screen left
+  the others still running the screensaver. The driver now broadcasts a
+  terminate to its sibling instances on dismiss (`dismiss_all` →
+  `terminate_sibling_drivers`, which SIGTERMs the other `niri-screensaver run`
+  processes via a `/proc` scan that skips its own PID). Siblings exit through
+  the normal signal path and do not re-broadcast, so there is no signal storm.
+  Surfaced once #11's fix made surfaces actually spread across outputs.
+
 ## [0.5.9] — 2026-05-22
 
 ### Fixed

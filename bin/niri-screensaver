@@ -18,6 +18,9 @@ LOGO_FILE="${LOGO_FILE:-${SCREENSAVER_DIR}/logo.txt}"
 # Search path for the default logo: installed share dir, then sibling share dir
 # relative to the script (when running from a checkout).
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+# Our own program name, used to find sibling driver instances on other monitors
+# when the user dismisses (see dismiss_all / terminate_sibling_drivers).
+SELF_NAME="$(basename "$0")"
 DEFAULT_LOGO_CANDIDATES=(
     "${NIRI_SCREENSAVER_DATA:-/usr/share/niri-screensaver}/logos/niri-name-with-icon.txt"
     "$HOME/.local/share/niri-screensaver/logos/niri-name-with-icon.txt"
@@ -137,8 +140,13 @@ restore_terminal() {
     stty echo 2>/dev/null
 }
 
+# Tear down THIS instance only: kill our tte, fade out, restore our terminal,
+# exit. Used by the signal traps (SIGTERM from a sibling's dismiss_all, or from
+# the launcher's kill) and as the final step of dismiss_all. Does NOT signal
+# siblings, so a broadcast SIGTERM can't trigger a signal storm.
 # shellcheck disable=SC2317
 exit_screensaver() {
+    trap - SIGINT SIGTERM SIGHUP SIGQUIT EXIT
     pkill -P $$ -x tte 2>/dev/null
     sleep 0.1
     if [[ -n "${FADE_OUT_EFFECT:-}" ]] && [[ -n "${CURRENT_LOGO_FILE:-}" ]]; then
@@ -146,6 +154,31 @@ exit_screensaver() {
     fi
     restore_terminal
     exit 0
+}
+
+# SIGTERM every other niri-screensaver driver process. On multi-monitor setups
+# each output runs its own driver in its own terminal, and a keypress only
+# reaches the focused one — so dismissing one screen must also wake the rest.
+# Each sibling's trap runs exit_screensaver (which closes its alacritty when the
+# driver exits) and does not re-broadcast. Iterate /proc rather than `pkill -f`
+# so we skip our own PID explicitly and don't self-match a wrapper.
+# shellcheck disable=SC2317
+terminate_sibling_drivers() {
+    local self=$$ pid cmd
+    for pid in /proc/[0-9]*; do
+        pid="${pid#/proc/}"
+        [[ "$pid" == "$self" ]] && continue
+        cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null)" || continue
+        [[ "$cmd" == *"${SELF_NAME} run "* ]] && kill -TERM "$pid" 2>/dev/null
+    done
+}
+
+# User dismissed on this monitor. Tear down the sibling instances on the other
+# monitors first, then exit ourselves.
+# shellcheck disable=SC2317
+dismiss_all() {
+    terminate_sibling_drivers
+    exit_screensaver
 }
 
 build_effect_args() {
@@ -351,9 +384,9 @@ run_screensaver() {
             if read -r -s -n1 -t 0.5 key 2>/dev/null; then
                 if [[ "$key" == $'\e' ]]; then
                     read -r -s -n5 -t 0.01 2>/dev/null || true
-                    exit_screensaver
+                    dismiss_all
                 elif [[ "$DISMISS_ON_KEY" != "false" ]]; then
-                    exit_screensaver
+                    dismiss_all
                 fi
             fi
         done
