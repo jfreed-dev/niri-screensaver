@@ -37,6 +37,7 @@
       "dismissOnKey": true,
       "randomLogo": false,
       "logoDir": "",
+      "multiMonitorMode": "independent",
       "launcherCommand": "niri-screensaver-launch launch",
       "killCommand": "niri-screensaver-launch kill"
     }

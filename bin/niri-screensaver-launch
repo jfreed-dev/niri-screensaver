@@ -22,6 +22,21 @@ LAUNCH_STAMP_FILE="${CONFIG_DIR}/launch.timestamp"
 # inner driver reads; the Noctalia plugin writes the key. See load_config.
 BATTERY_MIN_PERCENT="${BATTERY_MIN_PERCENT:-0}"
 
+# Multi-monitor content mode (sourced from config; the plugin writes it):
+#   independent - each output randomizes its own effect/logo (default).
+#   mirror      - all outputs show the same effect+logo: the launcher rolls one
+#                 seed and picks one logo, then passes them to every driver so
+#                 the surfaces render identical animations (best on matched
+#                 resolutions). See launch_screensaver.
+MULTI_MONITOR_MODE="${MULTI_MONITOR_MODE:-independent}"
+
+# Logo selection (mirror mode only): RANDOM_LOGO/LOGO_DIR/LOGO_FILE mirror the
+# inner driver's keys so the launcher can pre-pick the one shared logo. Defaults
+# re-applied in load_config since the plugin may write blanks.
+RANDOM_LOGO="${RANDOM_LOGO:-false}"
+LOGO_FILE="${LOGO_FILE:-}"
+LOGO_DIR="${LOGO_DIR:-}"
+
 # Window-rule open-focused + fullscreen surface causes a Wayland focus/enter
 # event that ext-idle-notify-v1 treats as activity. Noctalia (and similar
 # idle daemons) then fire their resumeCommand within ~1s of launch, killing
@@ -75,6 +90,8 @@ load_config() {
         source "$CONFIG_FILE"
     fi
     : "${BATTERY_MIN_PERCENT:=0}"
+    : "${MULTI_MONITOR_MODE:=independent}"
+    : "${RANDOM_LOGO:=false}"
 }
 
 is_disabled() { [[ -f "$TOGGLE_FILE" ]]; }
@@ -113,18 +130,65 @@ screensaver_window_ids() {
         | jq -r --arg cls "$WINDOW_CLASS" '.[] | select(.app_id == $cls) | .id' 2>/dev/null
 }
 
+# Resolve the directory of selectable logos for a mirror-mode random pick.
+# Mirrors the inner driver's resolve_logo_dir order: explicit LOGO_DIR, then the
+# installed/dev logos dir, then the directory of LOGO_FILE.
+mirror_logo_dir() {
+    if [[ -n "${LOGO_DIR:-}" && -d "$LOGO_DIR" ]]; then echo "$LOGO_DIR"; return 0; fi
+    [[ -d "$DATA_DIR/logos" ]] && { echo "$DATA_DIR/logos"; return 0; }
+    [[ -n "${LOGO_FILE:-}" && -f "$LOGO_FILE" ]] && { dirname "$LOGO_FILE"; return 0; }
+    return 1
+}
+
+# Echo one random *.txt logo path for mirror mode, or nothing if none found.
+pick_one_logo() {
+    local dir f files=()
+    dir="$(mirror_logo_dir)" || return 1
+    while IFS= read -r -d '' f; do files+=("$f"); done \
+        < <(find "$dir" -maxdepth 1 -type f -name '*.txt' -print0 2>/dev/null)
+    [[ ${#files[@]} -eq 0 ]] && return 1
+    echo "${files[RANDOM % ${#files[@]}]}"
+}
+
+# Populate DRIVER_ARGS for "mirror" multi-monitor mode: one shared RNG seed for
+# every driver (so all outputs render the same effect+motion each cycle) and, if
+# RANDOM_LOGO is on, one shared randomly-picked logo. No-op for "independent".
+# Only meaningful with >1 output; callers gate on that.
+setup_mirror_args() {
+    DRIVER_ARGS=()
+    [[ "$MULTI_MONITOR_MODE" == "mirror" ]] || return 0
+    local seed
+    seed=$(( RANDOM * 32768 + RANDOM ))
+    DRIVER_ARGS+=( --seed "$seed" )
+    local logo_note=""
+    if [[ "$RANDOM_LOGO" == "true" ]]; then
+        local logo
+        if logo="$(pick_one_logo)" && [[ -n "$logo" ]]; then
+            DRIVER_ARGS+=( --logo "$logo" )
+            logo_note=", logo $(basename "$logo")"
+        fi
+    fi
+    log_info "Mirror mode: shared seed ${seed}${logo_note}"
+}
+
+# Extra args appended to the inner driver's `run` command, set up per launch.
+# Used by mirror mode to pass `--seed`/`--logo`; empty in independent mode. niri
+# msg action spawn runs in the compositor's environment (not ours), so per-launch
+# choices must travel as argv, not exported env vars.
+DRIVER_ARGS=()
+
 # Spawn alacritty via niri so it inherits the compositor environment cleanly.
 spawn_one() {
     if command -v niri &>/dev/null; then
         niri msg action spawn -- alacritty \
             --class "$WINDOW_CLASS" \
             --config-file "$ALACRITTY_CONFIG" \
-            -e "$SCREENSAVER_BIN" run
+            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}"
     else
         alacritty \
             --class "$WINDOW_CLASS" \
             --config-file "$ALACRITTY_CONFIG" \
-            -e "$SCREENSAVER_BIN" run &
+            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" &
     fi
 }
 
@@ -283,6 +347,9 @@ launch_screensaver() {
 
     if [[ ${#outputs[@]} -gt 1 ]]; then
         log_info "Launching screensaver on ${#outputs[@]} output(s)..."
+        # Mirror mode only matters across multiple outputs; on one it would just
+        # pin a single repeating seed, so it's gated here.
+        setup_mirror_args
         local output
         for output in "${outputs[@]}"; do
             spawn_and_pin "$output"
@@ -332,6 +399,7 @@ show_status() {
         echo -e "Enabled:    ${GREEN}yes${NC}"
     fi
     echo -e "Outputs:    $(count_outputs)"
+    echo -e "Multi-mon:  ${MULTI_MONITOR_MODE} (mirror = same effect on every output)"
     if [[ "$BATTERY_MIN_PERCENT" =~ ^[0-9]+$ ]] && (( BATTERY_MIN_PERCENT > 0 )); then
         local cap ac
         cap=$(lowest_battery_capacity)
@@ -373,6 +441,10 @@ Environment:
                                         = disabled). Plugged in or no battery present never skips; 'launch
                                         force' overrides. Also a config-file key, which takes precedence
                                         (the plugin manages it); the env var is the pre-source default.
+    MULTI_MONITOR_MODE                  'independent' (default) = each output randomizes its own effect;
+                                        'mirror' = all outputs share one seed (and one logo when RANDOM_LOGO
+                                        is set) so they render the same effect. Config-file key (plugin
+                                        managed). Best coherence on matched-resolution monitors.
 EOF
 }
 

@@ -70,6 +70,7 @@ re-syncs the idle hook.
 | Exclude effects (CSV) | text | `EXCLUDE_EFFECTS` | `dev_worm` |
 | Fade-in effect | dropdown | `FADE_IN_EFFECT` | _empty_ |
 | Fade-out effect | dropdown | `FADE_OUT_EFFECT` | _empty_ |
+| Multi-monitor mode | dropdown | `MULTI_MONITOR_MODE` | `independent` |
 | Show clock between effects | toggle | `SHOW_CLOCK` | `false` |
 | Clock format (strftime) | text | `CLOCK_FORMAT` | `%H:%M` |
 | Show now-playing track | toggle | `SHOW_NOW_PLAYING` | `false` |

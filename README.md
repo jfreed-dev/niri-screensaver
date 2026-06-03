@@ -208,6 +208,8 @@ niri-screensaver-ctl effects        # list all TTE effects
 | `DISMISS_ON_KEY` | `true` | Any key dismisses; ESC and mouse always dismiss |
 | `RANDOM_LOGO` | `false` | When `true`, pick a random `*.txt` from `LOGO_DIR` before each effect cycle |
 | `LOGO_DIR` | _empty_ | Directory the random picker scans. Defaults to the installed `share/logos/` |
+| `MULTI_MONITOR_MODE` | `independent` | `independent` = each output randomizes its own effect; `mirror` = all outputs share one seed (and one logo when `RANDOM_LOGO` is set) so they show the same effect. Mirror is most coherent on matched-resolution monitors |
+| `MIRROR_INTERVAL` | `8` | Mirror mode only: seconds per effect window. All monitors switch effect on the same wall-clock boundary; lower = faster changes |
 
 On launch, the launcher parks the mouse pointer in the bottom-right corner via
 `wlrctl` (preferred) or `ydotool` if either is installed. For a full hide,

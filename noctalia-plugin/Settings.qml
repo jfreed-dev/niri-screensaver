@@ -34,6 +34,7 @@ ColumnLayout {
   property string editFadeOutEffect:  cfg.fadeOutEffect  ?? defaults.fadeOutEffect  ?? ""
   property bool   editRandomLogo:     cfg.randomLogo     ?? defaults.randomLogo     ?? false
   property string editLogoDir:        cfg.logoDir        ?? defaults.logoDir        ?? ""
+  property string editMultiMonitorMode: cfg.multiMonitorMode ?? defaults.multiMonitorMode ?? "independent"
   property string editLogoPath:       cfg.logoPath       ?? defaults.logoPath       ?? ""
 
   // Effective logo directory for the file dropdown: user override wins, otherwise
@@ -67,6 +68,7 @@ ColumnLayout {
     pluginApi.pluginSettings.fadeOutEffect  = root.editFadeOutEffect
     pluginApi.pluginSettings.randomLogo     = root.editRandomLogo
     pluginApi.pluginSettings.logoDir        = root.editLogoDir
+    pluginApi.pluginSettings.multiMonitorMode = root.editMultiMonitorMode
     pluginApi.pluginSettings.logoPath       = root.editLogoPath
     pluginApi.pluginSettings.showClock      = root.editShowClock
     pluginApi.pluginSettings.clockFormat    = root.editClockFormat
@@ -308,6 +310,17 @@ ColumnLayout {
         defaultValue: root.defaults.fadeOutEffect
         onSelected: key => root.editFadeOutEffect = key
       }
+
+      NComboBox {
+        Layout.fillWidth: true
+        minimumWidth: 280
+        label: pluginApi?.tr("settings.multi-monitor")
+        description: pluginApi?.tr("settings.multi-monitor-desc")
+        model: multiMonitorOptions
+        currentKey: root.editMultiMonitorMode
+        defaultValue: root.defaults.multiMonitorMode
+        onSelected: key => root.editMultiMonitorMode = key
+      }
     }
   }
 
@@ -478,6 +491,11 @@ ColumnLayout {
 
   ListModel { id: effectOptions }
 
+  // Fixed two-option model for the multi-monitor mode dropdown. Populated in
+  // Component.onCompleted so the names can come from i18n (ListElement can't
+  // call tr() at declaration time).
+  ListModel { id: multiMonitorOptions }
+
   // ---- Logo file dropdown plumbing ----
   //
   // Detect the installed share/logos/ at startup by mirroring the bash
@@ -537,6 +555,9 @@ ColumnLayout {
       'for d in "$HOME/.local/share/niri-screensaver/logos" "/usr/share/niri-screensaver/logos"; do [ -d "$d" ] && echo "$d" && exit 0; done']
     logoDirDetectProcess.running = true
     _rebuildLogoOptions()
+
+    multiMonitorOptions.append({key: "independent", name: pluginApi?.tr("settings.multi-monitor-independent")})
+    multiMonitorOptions.append({key: "mirror", name: pluginApi?.tr("settings.multi-monitor-mirror")})
 
     // Seed the "(none)" entry so the comboboxes have something to show
     // before the effects-detection Process returns.

@@ -29,6 +29,11 @@
     "fade-out-desc": "Optional one-shot effect played when the screensaver dismisses.",
     "effect-none": "(none)",
 
+    "multi-monitor": "Multi-monitor mode",
+    "multi-monitor-desc": "With more than one display: Independent shows a different random effect per monitor; Mirror shows the same effect on all of them (best on matched resolutions).",
+    "multi-monitor-independent": "Independent (different per monitor)",
+    "multi-monitor-mirror": "Mirror (same on all monitors)",
+
     "logo-section": "Logo",
     "random-logo": "Random logo per cycle",
     "random-logo-desc": "Pick a different logo from the Logo directory before each effect cycle.",
