@@ -43,6 +43,12 @@ DISMISS_ON_KEY="${DISMISS_ON_KEY:-true}"
 RANDOM_LOGO="${RANDOM_LOGO:-false}"
 LOGO_DIR="${LOGO_DIR:-}"
 
+# Base seed for tte's RNG. Empty = independent (each run randomizes on its own,
+# the default). When set (the launcher passes one shared value to every monitor
+# in "mirror" multi-monitor mode), each effect cycle uses BASE_SEED + cycle, so
+# all monitors render the same effect and motion each cycle. See --seed.
+SEED="${SEED:-}"
+
 # Cached by check_dependencies: "--no-restore-cursor" when the installed tte
 # supports it and we're hiding the cursor, else empty. tte otherwise re-shows
 # the cursor when an effect ends, flashing a white cursor block between effects.
@@ -336,14 +342,29 @@ run_screensaver() {
     local effect_args
     effect_args=$(build_effect_args)
 
+    # Cycle counter: in mirror mode the per-cycle seed is SEED + cycle, so every
+    # monitor shows the same effect each cycle while still varying over time.
+    local cycle=0
+
     while true; do
         # Re-roll the logo per effect cycle when RANDOM_LOGO is on. Falls back
         # silently to the configured logo_file if the directory has no .txt files.
-        if [[ "$RANDOM_LOGO" == "true" ]]; then
+        # Skipped in mirror mode (SEED set): all monitors must show one shared
+        # logo, which the launcher passes via --logo.
+        if [[ "$RANDOM_LOGO" == "true" && -z "$SEED" ]]; then
             local picked
             picked="$(pick_random_logo)" && [[ -f "$picked" ]] && logo_file="$picked"
             CURRENT_LOGO_FILE="$logo_file"
         fi
+
+        # Mirror mode: seed tte's RNG deterministically so identical canvases
+        # render identical animations. Independent mode (no SEED): omit the flag.
+        # Advance the cycle now (not at loop end) so the retry-on-early-exit
+        # `continue` path below still moves to a fresh seed — otherwise a seed
+        # that makes tte exit immediately would repeat the same effect forever.
+        local seed_arg=""
+        [[ -n "$SEED" ]] && seed_arg="--seed $((SEED + cycle))"
+        ((cycle++))
 
         display_clock
         display_now_playing
@@ -355,7 +376,7 @@ run_screensaver() {
 
         # shellcheck disable=SC2086
         tte -i "$logo_file" \
-            --random-effect $effect_args $NO_RESTORE_CURSOR_ARG \
+            --random-effect $effect_args $seed_arg $NO_RESTORE_CURSOR_ARG \
             --frame-rate "$FRAME_RATE" \
             --canvas-width 0 --canvas-height 0 \
             --anchor-canvas c --anchor-text c \
@@ -452,6 +473,10 @@ Commands:
 Options:
     -l, --logo FILE     Use a specific logo file
     -f, --fps NUMBER    Set frame rate (default: 60)
+    -s, --seed NUMBER   Base RNG seed for tte (mirror mode). When set, each
+                        effect cycle uses SEED+cycle, so monitors sharing the
+                        seed render identical animations. The launcher passes
+                        this in mirror multi-monitor mode; rarely set by hand.
 
 Environment Variables:
     SCREENSAVER_DIR     Config directory (default: ~/.config/niri-screensaver)
@@ -478,6 +503,7 @@ main() {
         case "$1" in
             -l|--logo) LOGO_FILE="$2"; shift 2 ;;
             -f|--fps)  FRAME_RATE="$2"; shift 2 ;;
+            -s|--seed) SEED="$2"; shift 2 ;;
             -h|--help) usage; exit 0 ;;
             -*)        log_error "Unknown option: $1"; usage; exit 1 ;;
             *)         break ;;
