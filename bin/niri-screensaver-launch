@@ -3,7 +3,10 @@
 #
 # Spawns one alacritty per output with --class niri-screensaver. Niri's window-rule
 # (see docs/niri-window-rule.kdl) matches that app-id and applies open-fullscreen.
-# For multi-monitor setups, focus-monitor-next is used to cycle outputs between spawns.
+# For multi-monitor setups, each surface is pinned to its target output by window id
+# (move-window-to-monitor --id), which is independent of pointer/keyboard focus. See
+# issue #11: focus-monitor-next cycling collapsed all surfaces onto the cursor's output
+# under focus-follows-mouse.
 # SPDX-License-Identifier: GPL-3.0-only
 
 set -uo pipefail
@@ -96,6 +99,20 @@ count_outputs() {
     fi
 }
 
+# Echo the names of all connected outputs, one per line (sorted, stable order).
+output_names() {
+    niri msg --json outputs 2>/dev/null | jq -r 'keys[]' 2>/dev/null
+}
+
+# Echo the ids of all currently-mapped screensaver windows, one per line.
+# Matches our spawn --class (Wayland app_id). niri's windows query has no
+# 'output' field, so placement is driven (spawn -> detect new id -> move),
+# not read back from here.
+screensaver_window_ids() {
+    niri msg --json windows 2>/dev/null \
+        | jq -r --arg cls "$WINDOW_CLASS" '.[] | select(.app_id == $cls) | .id' 2>/dev/null
+}
+
 # Spawn alacritty via niri so it inherits the compositor environment cleanly.
 spawn_one() {
     if command -v niri &>/dev/null; then
@@ -108,6 +125,33 @@ spawn_one() {
             --class "$WINDOW_CLASS" \
             --config-file "$ALACRITTY_CONFIG" \
             -e "$SCREENSAVER_BIN" run &
+    fi
+}
+
+# How long to wait for a freshly-spawned screensaver window to appear in
+# niri's window list before giving up on pinning it (seconds, in 0.1s steps).
+SPAWN_PIN_TIMEOUT_SECS="${NIRI_SCREENSAVER_SPAWN_PIN_TIMEOUT_SECS:-2}"
+
+# Spawn one surface and pin it to the given output by window id. Snapshots the
+# existing screensaver window ids, spawns, waits for the single new id to
+# appear, then move-window-to-monitor --id. This is focus-independent, so it
+# works under focus-follows-mouse where keyboard-focus cycling does not (#11).
+# Echoes nothing; logs a warning if the window never appears in time.
+spawn_and_pin() {
+    local output="$1" before after new_id="" steps
+    before="$(screensaver_window_ids | sort)"
+    spawn_one
+    steps=$(( SPAWN_PIN_TIMEOUT_SECS * 10 ))
+    for _ in $(seq 1 "$steps"); do
+        sleep 0.1
+        after="$(screensaver_window_ids | sort)"
+        new_id="$(comm -13 <(echo "$before") <(echo "$after") | head -1)"
+        [[ -n "$new_id" ]] && break
+    done
+    if [[ -n "$new_id" ]]; then
+        niri msg action move-window-to-monitor --id "$new_id" "$output" 2>/dev/null || true
+    else
+        log_warn "Surface for output '$output' did not appear within ${SPAWN_PIN_TIMEOUT_SECS}s; not pinned."
     fi
 }
 
@@ -229,22 +273,28 @@ launch_screensaver() {
     echo $$ > "$PID_FILE"
     date +%s > "$LAUNCH_STAMP_FILE"
 
-    local count
-    count=$(count_outputs)
-    [[ -z "$count" || "$count" -lt 1 ]] && count=1
+    # Enumerate outputs once, up front: covers N>2 monitors and avoids racing a
+    # hotplug that happens mid-launch. Pin each surface to its output by id so
+    # placement doesn't depend on pointer/keyboard focus (#11).
+    local outputs=()
+    if command -v niri &>/dev/null && command -v jq &>/dev/null; then
+        mapfile -t outputs < <(output_names)
+    fi
 
-    log_info "Launching screensaver on $count output(s)..."
-
-    spawn_one
-    if [[ "$count" -gt 1 ]] && command -v niri &>/dev/null; then
-        local i=1
-        while [[ $i -lt $count ]]; do
-            sleep 0.3
-            niri msg action focus-monitor-next 2>/dev/null || true
-            sleep 0.1
-            spawn_one
-            ((i++))
+    if [[ ${#outputs[@]} -gt 1 ]]; then
+        log_info "Launching screensaver on ${#outputs[@]} output(s)..."
+        local output
+        for output in "${outputs[@]}"; do
+            spawn_and_pin "$output"
         done
+    elif [[ ${#outputs[@]} -eq 1 ]]; then
+        # Single output: no pinning needed, the lone surface fills it.
+        log_info "Launching screensaver on 1 output..."
+        spawn_one
+    else
+        # niri/jq unavailable or enumeration failed: best-effort single spawn.
+        log_info "Launching screensaver..."
+        spawn_one
     fi
 
     # Park the pointer after the last alacritty has had a moment to map.
@@ -315,6 +365,10 @@ Environment:
     NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS Drop 'kill' invocations arriving within this many seconds of 'launch'
                                         (default: 3; set to 0 to disable). Works around the Noctalia/niri
                                         spawn-resume race documented in issue #4.
+    NIRI_SCREENSAVER_SPAWN_PIN_TIMEOUT_SECS
+                                        How long to wait for a freshly-spawned surface to appear before
+                                        giving up on pinning it to its output (default: 2). Raise on slow
+                                        machines if a monitor occasionally goes uncovered. See issue #11.
     BATTERY_MIN_PERCENT                 Skip auto-launch when on battery below this percentage (default: 0
                                         = disabled). Plugged in or no battery present never skips; 'launch
                                         force' overrides. Also a config-file key, which takes precedence

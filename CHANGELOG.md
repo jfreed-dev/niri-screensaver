@@ -5,6 +5,26 @@ All notable changes to **niri-screensaver** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Multi-monitor: surfaces no longer collapse onto one output under
+  `focus-follows-mouse`.** `niri-screensaver-launch` previously spread one
+  Alacritty per output by cycling *keyboard* focus
+  (`niri msg action focus-monitor-next`) between spawns. With niri's
+  `input { focus-follows-mouse }`, window placement follows the *pointer*, not
+  keyboard focus, and the pointer isn't parked until after the spawn loop — so
+  every surface opened on the cursor's monitor and the others stayed blank. The
+  launcher now enumerates outputs once up front and pins each spawned surface to
+  its target output by window id
+  (`niri msg action move-window-to-monitor --id <id> <output>`), which is
+  independent of pointer/keyboard focus. Outputs are enumerated a single time so
+  N>2 monitors and mid-launch hotplug are handled deterministically. A new
+  `NIRI_SCREENSAVER_SPAWN_PIN_TIMEOUT_SECS` env var (default `2`) bounds how long
+  the launcher waits for each surface to appear before moving on. Thanks to
+  @landryjeanluc for the report and root-cause analysis (#11).
+
 ## [0.5.9] — 2026-05-22
 
 ### Fixed
