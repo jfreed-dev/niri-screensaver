@@ -15,12 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   makes every output show the *same* effect: the launcher rolls one RNG seed
   (and, when `RANDOM_LOGO` is on, picks one shared logo) and passes them to every
   driver via argv (`--seed`/`--logo`), since `niri msg action spawn` runs in the
-  compositor's environment and would not inherit exported vars. The driver seeds
-  `tte` with `SEED + cycle` each loop, so `tte`'s deterministic RNG renders
-  identical animations on matched-resolution monitors (it degrades gracefully to
-  "same effect, different layout" when resolutions differ). Surfaced in the
-  Noctalia plugin as a **Multi-monitor mode** dropdown in the Effects section.
-  Only applies with more than one output; single-monitor setups are unaffected.
+  compositor's environment and would not inherit exported vars. Each driver seeds
+  `tte` with `SEED + window`, where `window = wall-clock-seconds / MIRROR_INTERVAL`
+  (default 8s) — deriving the effect window from the shared wall clock, not a
+  per-process counter, is what keeps the monitors on the *same* effect at the
+  same time even though the surfaces spawn at different moments and animate for
+  different durations. `tte`'s deterministic RNG then renders identical
+  animations on matched-resolution monitors; it degrades to "same effect,
+  different layout" when resolutions differ. Surfaced in the Noctalia plugin as a
+  **Multi-monitor mode** dropdown in the Effects section. Only applies with more
+  than one output; single-monitor setups are unaffected.
 
 ### Fixed
 

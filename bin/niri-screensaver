@@ -45,9 +45,18 @@ LOGO_DIR="${LOGO_DIR:-}"
 
 # Base seed for tte's RNG. Empty = independent (each run randomizes on its own,
 # the default). When set (the launcher passes one shared value to every monitor
-# in "mirror" multi-monitor mode), each effect cycle uses BASE_SEED + cycle, so
-# all monitors render the same effect and motion each cycle. See --seed.
+# in "mirror" multi-monitor mode), each effect window uses BASE_SEED + window,
+# where window = wall-clock-seconds / MIRROR_INTERVAL. Deriving the window from
+# the shared wall clock (rather than a per-process counter) is what keeps the
+# monitors picking the SAME effect at the same time — a local counter drifts
+# because the surfaces spawn at different moments and effects animate for
+# different durations. See --seed.
 SEED="${SEED:-}"
+
+# Mirror mode: seconds per effect window. All monitors switch to a new effect on
+# the same wall-clock boundary. Smaller = effects change faster (and replay less
+# within a window); larger = each effect lingers longer.
+MIRROR_INTERVAL="${MIRROR_INTERVAL:-8}"
 
 # Cached by check_dependencies: "--no-restore-cursor" when the installed tte
 # supports it and we're hiding the cursor, else empty. tte otherwise re-shows
@@ -86,6 +95,9 @@ load_config() {
     : "${CURSOR_HIDE:=true}"
     : "${DISMISS_ON_KEY:=true}"
     : "${RANDOM_LOGO:=false}"
+    : "${MIRROR_INTERVAL:=8}"
+    # Must be a positive integer — it's a divisor for the wall-clock window.
+    [[ "$MIRROR_INTERVAL" =~ ^[1-9][0-9]*$ ]] || MIRROR_INTERVAL=8
     # LOGO_DIR is left empty by default; resolve_logo_dir() figures it out lazily.
 }
 
@@ -342,10 +354,6 @@ run_screensaver() {
     local effect_args
     effect_args=$(build_effect_args)
 
-    # Cycle counter: in mirror mode the per-cycle seed is SEED + cycle, so every
-    # monitor shows the same effect each cycle while still varying over time.
-    local cycle=0
-
     while true; do
         # Re-roll the logo per effect cycle when RANDOM_LOGO is on. Falls back
         # silently to the configured logo_file if the directory has no .txt files.
@@ -357,14 +365,15 @@ run_screensaver() {
             CURRENT_LOGO_FILE="$logo_file"
         fi
 
-        # Mirror mode: seed tte's RNG deterministically so identical canvases
-        # render identical animations. Independent mode (no SEED): omit the flag.
-        # Advance the cycle now (not at loop end) so the retry-on-early-exit
-        # `continue` path below still moves to a fresh seed — otherwise a seed
-        # that makes tte exit immediately would repeat the same effect forever.
+        # Mirror mode: seed tte's RNG from a wall-clock window so every monitor
+        # picks the same effect at the same time, regardless of when each surface
+        # started or how long its effects ran. Independent mode (no SEED): omit
+        # the flag so each monitor randomizes on its own.
         local seed_arg=""
-        [[ -n "$SEED" ]] && seed_arg="--seed $((SEED + cycle))"
-        ((cycle++))
+        if [[ -n "$SEED" ]]; then
+            local window=$(( $(date +%s) / MIRROR_INTERVAL ))
+            seed_arg="--seed $(( SEED + window ))"
+        fi
 
         display_clock
         display_now_playing
