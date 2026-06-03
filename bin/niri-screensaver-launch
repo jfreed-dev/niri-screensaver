@@ -471,4 +471,8 @@ main() {
     esac
 }
 
-main "$@"
+# Run main only when executed directly, not when sourced (e.g. by the bats
+# test suite, which sources this file to unit-test individual functions).
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

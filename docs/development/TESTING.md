@@ -1,15 +1,24 @@
 # Testing Guide
 
-How to verify a change doesn't break either deliverable. There are no
-unit tests — the project is bash + QML + ASCII assets, so testing is
-mostly **layered smoke testing** (each script tested in isolation,
-then together) plus a UAT checklist for user-visible behavior.
+How to verify a change doesn't break either deliverable. Two layers:
+
+- **bats unit tests** over the bash — the pure functions (config defaulting,
+  effect-arg building, logo picking, launch gating) get real assertions, run
+  under kcov for coverage in CI.
+- **Layered smoke tests + a UAT checklist** for everything the unit tests
+  can't reach: the effect loop, fullscreen spawning, the QML plugin, idle
+  integration. QML stays manual — Quickshell's dialect isn't unit-testable
+  here.
 
 ## Quick reference
 
 ```bash
-# Lint + structural sanity (run before every commit)
-make pre-commit             # shellcheck + json + doc-links + typos + markdownlint + actionlint
+# Lint + unit + structural sanity (run before every commit)
+make pre-commit             # shellcheck + json + doc-links + typos + markdownlint + actionlint + unit
+
+# Unit tests
+make unit                   # bats test/ (skips with a hint if bats isn't installed)
+make coverage               # bats under kcov → coverage/ (needs bats + kcov)
 
 # Build / install state
 make health-quick           # build/lint/structural — no runtime needed
@@ -22,6 +31,30 @@ niri-screensaver-ctl effects            # list all TTE effects
 niri-screensaver-ctl launch             # full fullscreen run (requires niri)
 niri-screensaver-ctl status             # report state — paste this in bug reports
 ```
+
+## Unit tests (bats)
+
+The suite lives in `test/` and covers the bash scripts' pure functions:
+
+| File | Covers |
+|------|--------|
+| `test/driver.bats` | `bin/niri-screensaver` — `build_effect_args`, `load_config` defaulting, logo resolution/picking |
+| `test/launch.bats` | `bin/niri-screensaver-launch` — toggle state, kill-debounce (#4), battery gating, mirror-arg assembly, data-dir resolution |
+| `test/scripts.bats` | the helper scripts + `ctl` dispatch, run as child processes |
+
+Both bin scripts guard `main "$@"` behind a `BASH_SOURCE`/`$0` check, so a test
+can `source` them to call a single function without the script running. Shared
+setup is in `test/test_helper.bash`.
+
+```bash
+make unit                   # or: bats test/
+make coverage               # kcov instruments the run → coverage/index.html
+```
+
+Functions that need a live niri/tte/terminal (the effect loop, fullscreen
+spawning, the keypress drain) aren't unit-tested — those stay in the smoke
+tests and UAT below. When you add a pure helper, add a case for it; when you
+touch gating or config logic, the existing cases should still pass.
 
 ## Layered smoke tests
 

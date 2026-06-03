@@ -16,7 +16,7 @@ BASH_SCRIPTS := bin/niri-screensaver bin/niri-screensaver-launch bin/niri-screen
 INSTALL_PREFIX ?= $(HOME)/.local
 
 .PHONY: help default check lint shellcheck json-validate doc-links \
-        typos markdownlint actionlint \
+        typos markdownlint actionlint unit coverage \
         health health-quick pre-commit install uninstall test effects \
         plugin-link plugin-unlink
 
@@ -34,6 +34,8 @@ help:
 	@echo "    make typos          spell-check (cargo install typos-cli)"
 	@echo "    make markdownlint   markdown hygiene (npm i -g markdownlint-cli2)"
 	@echo "    make actionlint     workflow hygiene (go install github.com/rhysd/actionlint/cmd/actionlint@latest)"
+	@echo "    make unit           bats unit tests (pacman -S bats / apt install bats)"
+	@echo "    make coverage       bats under kcov, writes coverage/ (needs bats + kcov)"
 	@echo ""
 	@echo "  Health checks:"
 	@echo "    make health-quick   build/code-quality checks only (no runtime)"
@@ -54,7 +56,7 @@ help:
 
 # ---------- CI parity ----------
 
-check: shellcheck json-validate doc-links typos markdownlint actionlint
+check: shellcheck json-validate doc-links typos markdownlint actionlint unit
 	@echo "All checks passed."
 
 lint: check
@@ -94,6 +96,27 @@ actionlint:
 		echo "[actionlint] running"; actionlint; \
 	else \
 		echo "[actionlint] SKIP — install: see https://github.com/rhysd/actionlint#installation"; \
+	fi
+
+# bats skips with a hint when missing, same as the linters above. CI runs it
+# (under kcov) in the coverage job, so the gate still binds on PRs.
+unit:
+	@if command -v bats >/dev/null 2>&1; then \
+		echo "[unit] bats test/"; bats test/; \
+	else \
+		echo "[unit] SKIP — install: pacman -S bats (or apt install bats)"; \
+	fi
+
+# Line coverage of the bash via kcov instrumenting the bats run. Mirrors the
+# coverage job in CI; output lands in coverage/ (open coverage/index.html).
+coverage:
+	@if command -v kcov >/dev/null 2>&1 && command -v bats >/dev/null 2>&1; then \
+		echo "[coverage] kcov + bats"; \
+		mkdir -p coverage; \
+		kcov --clean --include-path="$(CURDIR)/bin,$(CURDIR)/scripts" "$(CURDIR)/coverage" bats test/; \
+		echo "Coverage written to coverage/ (open coverage/index.html)"; \
+	else \
+		echo "[coverage] SKIP — needs both bats and kcov installed"; \
 	fi
 
 # ---------- Health ----------

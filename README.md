@@ -4,6 +4,7 @@
 [![Latest release](https://img.shields.io/github/v/release/jfreed-dev/niri-screensaver)](https://github.com/jfreed-dev/niri-screensaver/releases)
 [![AUR version](https://img.shields.io/aur/version/niri-screensaver?label=AUR)](https://aur.archlinux.org/packages/niri-screensaver)
 [![CI](https://github.com/jfreed-dev/niri-screensaver/actions/workflows/ci.yml/badge.svg)](https://github.com/jfreed-dev/niri-screensaver/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/jfreed-dev/niri-screensaver/branch/main/graph/badge.svg)](https://codecov.io/gh/jfreed-dev/niri-screensaver)
 
 A terminal-based screensaver for [Niri](https://github.com/YaLTeR/niri), driven by
 [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects) and

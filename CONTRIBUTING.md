@@ -33,6 +33,7 @@ ln -s "$PWD/noctalia-plugin" ~/.config/noctalia/plugins/niri-screensaver
 
 | Change to | How to verify |
 |-----------|---------------|
+| Any bash (pure functions) | `make unit` — bats suite in `test/`; add a case for new helpers |
 | `bin/niri-screensaver` | `niri-screensaver-ctl test` — single inline effect, no fullscreen |
 | `bin/niri-screensaver-launch` | `niri-screensaver-launch launch` — full fullscreen run |
 | Plugin QML | Toggle the plugin off/on in Noctalia Settings → Plugins; or restart `qs -c noctalia-shell` |
@@ -42,8 +43,8 @@ ln -s "$PWD/noctalia-plugin" ~/.config/noctalia/plugins/niri-screensaver
 ## Style conventions
 
 - **Bash:** `set -uo pipefail` at the top; double-quote variable expansions; prefer
-  `[[ ]]` to `[ ]`. Run `shellcheck bin/*` before sending a PR — CI runs the
-  same. Inline comments only for non-obvious *why*.
+  `[[ ]]` to `[ ]`. Run `shellcheck bin/*` and `make unit` before sending a PR —
+  CI runs both. Inline comments only for non-obvious *why*.
 - **QML:** match the surrounding 2-space indentation and the existing file's
   property-ordering style. Avoid invented signal handler names; if you need a
   property change to fire `Connections`, the target must be a `QObject` with
