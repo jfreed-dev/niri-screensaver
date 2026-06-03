@@ -21,6 +21,7 @@ Commands:
     kill             Stop the running screensaver
     toggle           Toggle the disabled flag
     status           Show running/enabled/output state
+    is-running       Exit 0 if running, 1 if not (quiet; for scripts/widgets)
     test [EFFECT]    Run a single TTE effect (random if omitted)
     preview EFFECT   Preview a single named TTE effect inline
     effects          List all TTE effects
@@ -36,7 +37,7 @@ cmd="${1:-help}"
 shift 2>/dev/null || true
 
 case "$cmd" in
-    launch|kill|toggle|status)     exec "$LAUNCHER" "$cmd" "$@" ;;
+    launch|kill|toggle|status|is-running) exec "$LAUNCHER" "$cmd" "$@" ;;
     test|preview|effects|setup)    exec "$DRIVER" "$cmd" "$@" ;;
     help|-h|--help)            usage ;;
     *) echo "Unknown command: $cmd" >&2; usage; exit 1 ;;

@@ -423,6 +423,7 @@ Commands:
     kill             Stop running screensaver
     toggle           Toggle screensaver enabled/disabled
     status           Show status
+    is-running       Exit 0 if the screensaver is running, 1 otherwise (quiet)
     help             Show this help
 
 Environment:
@@ -464,6 +465,7 @@ main() {
             ;;
         toggle)           toggle_screensaver ;;
         status)           show_status ;;
+        is-running)       is_running ;;   # quiet: exit 0 if running, 1 if not
         help|-h|--help)   usage ;;
         *) log_error "Unknown command: $cmd"; usage; exit 1 ;;
     esac

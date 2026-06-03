@@ -1,7 +1,7 @@
 // BarWidget.qml - status-bar entry for niri-screensaver
 //
-// Click       → launch the screensaver immediately.
-// Right-click → context menu: Trigger / Stop / Open Settings / Toggle enabled.
+// Click       → smart toggle: launch if stopped, stop if already running.
+// Right-click → context menu: Trigger / Stop / Quit / Reload / Toggle / Settings.
 //
 // Renders a custom monitor-with-image SVG (assets/screensaver.svg) recolored
 // at runtime via MultiEffect so it follows the active Noctalia theme. The
@@ -94,11 +94,64 @@ Item {
     killProc.running = true
   }
 
+  // Smart left-click: probe running state, then stop if running else launch.
+  // The probe (`niri-screensaver-launch is-running`) exits 0 when running, so
+  // we branch in onExited. Falling back to launch on a probe error keeps the
+  // click useful even if the status command is somehow unavailable.
+  Process {
+    id: statusProbe
+    onExited: function (code) {
+      if (code === 0) root._runKill()
+      else root._runLaunch()
+    }
+  }
+  function _smartToggle() {
+    var argv = root.mainInstance ? root.mainInstance._statusArgv()
+                                 : ["niri-screensaver-launch", "is-running"]
+    statusProbe.command = argv
+    statusProbe.running = true
+  }
+
+  // Quit: stop the screensaver AND disable it, so Noctalia's idle won't
+  // relaunch it until it's re-enabled (Toggle enabled, or Reload).
+  function _runQuit() {
+    root._runKill()
+    if (root.pluginApi) {
+      root.pluginApi.pluginSettings.enabled = false
+      root.pluginApi.saveSettings()
+    }
+  }
+
+  // Reload: full fresh-start. Stop the screensaver, restart the Noctalia shell
+  // (so the systray reappears), and leave the screensaver enabled. The work runs
+  // detached via setsid because `qs kill` tears down this widget's own host
+  // process — the detached child outlives it and brings the shell back up.
+  Process {
+    id: reloadProc
+    onExited: function (code) {
+      if (code !== 0) Logger.w("NiriScreensaver", "reload (bar) exited with code", code)
+    }
+  }
+  function _runReload() {
+    if (root.pluginApi) {
+      root.pluginApi.pluginSettings.enabled = true
+      root.pluginApi.saveSettings()
+    }
+    reloadProc.command = ["sh", "-c",
+      "setsid sh -c 'niri-screensaver-launch kill; "
+      + "rm -f \"$HOME/.config/niri-screensaver/disabled\"; "
+      + "sleep 0.3; qs kill; sleep 0.6; exec qs -c noctalia-shell' "
+      + "</dev/null >/dev/null 2>&1 &"]
+    reloadProc.running = true
+  }
+
   NPopupContextMenu {
     id: contextMenu
     model: [
       { "label": pluginApi?.tr("barwidget.trigger"),  "action": "trigger",  "icon": "player-play" },
-      { "label": pluginApi?.tr("barwidget.stop"),     "action": "stop",     "icon": "stop" },
+      { "label": pluginApi?.tr("barwidget.stop"),     "action": "stop",     "icon": "player-stop" },
+      { "label": pluginApi?.tr("barwidget.quit"),     "action": "quit",     "icon": "logout" },
+      { "label": pluginApi?.tr("barwidget.reload"),   "action": "reload",   "icon": "refresh" },
       { "label": pluginApi?.tr("barwidget.toggle"),   "action": "toggle",   "icon": "power" },
       { "label": pluginApi?.tr("barwidget.settings"), "action": "settings", "icon": "settings" }
     ]
@@ -110,6 +163,10 @@ Item {
         root._runLaunch()
       } else if (action === "stop") {
         root._runKill()
+      } else if (action === "quit") {
+        root._runQuit()
+      } else if (action === "reload") {
+        root._runReload()
       } else if (action === "toggle") {
         if (root.pluginApi) {
           var en = root.pluginApi.pluginSettings.enabled === true
@@ -146,7 +203,7 @@ Item {
       if (mouse.button === Qt.RightButton) {
         PanelService.showContextMenu(contextMenu, root, screen)
       } else {
-        root._runLaunch()
+        root._smartToggle()
       }
     }
   }
