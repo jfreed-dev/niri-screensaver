@@ -1,5 +1,9 @@
 *.swp
+.*.sw[a-p]
 *~
+*.bak
+*.orig
+*.tmp
 .DS_Store
 
 # Runtime state written by Noctalia (per-user plugin settings)
