@@ -58,6 +58,18 @@ SEED="${SEED:-}"
 # within a window); larger = each effect lingers longer.
 MIRROR_INTERVAL="${MIRROR_INTERVAL:-8}"
 
+# Mirror mode: lock tte's canvas to a fixed cell box so the animated region is
+# the same grid on every output regardless of its resolution. tte's RNG is
+# deterministic, so an identical grid + shared seed renders byte-identical
+# animations even across mismatched-resolution monitors (issue #14); without it,
+# mirror plays the same effect but a different layout when resolutions differ.
+# Empty (the default) keeps the canvas tracking each terminal's full size — the
+# original full-screen behavior. Both must be positive integers to take effect,
+# and only in mirror mode (SEED set); the effect then plays in a centered box
+# (--anchor-canvas c is already passed at every tte call site).
+MIRROR_CANVAS_COLS="${MIRROR_CANVAS_COLS:-}"
+MIRROR_CANVAS_ROWS="${MIRROR_CANVAS_ROWS:-}"
+
 # Cached by check_dependencies: "--no-restore-cursor" when the installed tte
 # supports it and we're hiding the cursor, else empty. tte otherwise re-shows
 # the cursor when an effect ends, flashing a white cursor block between effects.
@@ -98,6 +110,13 @@ load_config() {
     : "${MIRROR_INTERVAL:=8}"
     # Must be a positive integer — it's a divisor for the wall-clock window.
     [[ "$MIRROR_INTERVAL" =~ ^[1-9][0-9]*$ ]] || MIRROR_INTERVAL=8
+    : "${MIRROR_CANVAS_COLS:=}"
+    : "${MIRROR_CANVAS_ROWS:=}"
+    # A fixed mirror canvas needs BOTH dims as positive integers. Blank (incl.
+    # the plugin writing empty) or garbage falls back to the full-screen canvas,
+    # so a half-set or invalid value can't hand tte a bad --canvas-width/height.
+    [[ "$MIRROR_CANVAS_COLS" =~ ^[1-9][0-9]*$ ]] || MIRROR_CANVAS_COLS=""
+    [[ "$MIRROR_CANVAS_ROWS" =~ ^[1-9][0-9]*$ ]] || MIRROR_CANVAS_ROWS=""
     # LOGO_DIR is left empty by default; resolve_logo_dir() figures it out lazily.
 }
 
@@ -207,14 +226,28 @@ build_effect_args() {
     fi
 }
 
+# Echo the tte canvas-sizing flags. In mirror mode (SEED set) with both
+# MIRROR_CANVAS_COLS and MIRROR_CANVAS_ROWS set, lock the canvas to a fixed
+# centered cell box so the animated region is byte-identical on every output
+# regardless of its resolution (issue #14) — the --anchor-canvas c at each call
+# site centers that box. Otherwise the canvas tracks the terminal (full screen).
+mirror_canvas_args() {
+    if [[ -n "${SEED:-}" && -n "${MIRROR_CANVAS_COLS:-}" && -n "${MIRROR_CANVAS_ROWS:-}" ]]; then
+        echo "--canvas-width $MIRROR_CANVAS_COLS --canvas-height $MIRROR_CANVAS_ROWS"
+    else
+        echo "--canvas-width 0 --canvas-height 0"
+    fi
+}
+
 run_fade_in() {
     local logo_file="$1" effect="${FADE_IN_EFFECT:-}"
     [[ -z "$effect" ]] && return 0
     clear
+    local canvas; canvas=$(mirror_canvas_args)
     # shellcheck disable=SC2086
     tte -i "$logo_file" \
         --frame-rate "$FRAME_RATE" \
-        --canvas-width 0 --canvas-height 0 \
+        $canvas \
         --anchor-canvas c --anchor-text c \
         $NO_RESTORE_CURSOR_ARG "$effect" 2>/dev/null
     sleep 0.5
@@ -224,10 +257,11 @@ run_fade_out() {
     local logo_file="$1" effect="${FADE_OUT_EFFECT:-}"
     [[ -z "$effect" ]] && return 0
     clear
+    local canvas; canvas=$(mirror_canvas_args)
     # shellcheck disable=SC2086
     tte -i "$logo_file" \
         --frame-rate "$FRAME_RATE" \
-        --canvas-width 0 --canvas-height 0 \
+        $canvas \
         --anchor-canvas c --anchor-text c \
         $NO_RESTORE_CURSOR_ARG "$effect" 2>/dev/null
 }
@@ -374,6 +408,7 @@ run_screensaver() {
             local window=$(( $(date +%s) / MIRROR_INTERVAL ))
             seed_arg="--seed $(( SEED + window ))"
         fi
+        local canvas; canvas=$(mirror_canvas_args)
 
         display_clock
         display_now_playing
@@ -387,7 +422,7 @@ run_screensaver() {
         tte -i "$logo_file" \
             --random-effect $effect_args $seed_arg $NO_RESTORE_CURSOR_ARG \
             --frame-rate "$FRAME_RATE" \
-            --canvas-width 0 --canvas-height 0 \
+            $canvas \
             --anchor-canvas c --anchor-text c \
             </dev/null 2>/dev/null &
 
@@ -439,12 +474,13 @@ run_single_effect() {
 
     local effect_args
     effect_args=$(build_effect_args)
+    local canvas; canvas=$(mirror_canvas_args)
 
     if [[ -n "$effect" ]]; then
         # shellcheck disable=SC2086
         tte -i "$logo_file" \
             --frame-rate "$FRAME_RATE" \
-            --canvas-width 0 --canvas-height 0 \
+            $canvas \
             --anchor-canvas c --anchor-text c \
             $NO_RESTORE_CURSOR_ARG "$effect" </dev/null
     else
@@ -452,7 +488,7 @@ run_single_effect() {
         tte -i "$logo_file" \
             --random-effect $effect_args $NO_RESTORE_CURSOR_ARG \
             --frame-rate "$FRAME_RATE" \
-            --canvas-width 0 --canvas-height 0 \
+            $canvas \
             --anchor-canvas c --anchor-text c </dev/null
     fi
 
