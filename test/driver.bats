@@ -72,10 +72,57 @@ teardown() {
     [ "$MIRROR_INTERVAL" = "12" ]
 }
 
+@test "load_config: blanks a non-numeric MIRROR_CANVAS_COLS, keeps a valid row" {
+    local cfg="$TEST_TMP/config"
+    printf 'MIRROR_CANVAS_COLS="abc"\nMIRROR_CANVAS_ROWS="49"\n' > "$cfg"
+    CONFIG_FILE="$cfg"
+    load_config
+    [ -z "$MIRROR_CANVAS_COLS" ]
+    [ "$MIRROR_CANVAS_ROWS" = "49" ]
+}
+
+@test "load_config: keeps valid MIRROR_CANVAS dimensions" {
+    local cfg="$TEST_TMP/config"
+    printf 'MIRROR_CANVAS_COLS="86"\nMIRROR_CANVAS_ROWS="49"\n' > "$cfg"
+    CONFIG_FILE="$cfg"
+    load_config
+    [ "$MIRROR_CANVAS_COLS" = "86" ]
+    [ "$MIRROR_CANVAS_ROWS" = "49" ]
+}
+
 @test "load_config: no-op when config file is absent" {
     CONFIG_FILE="$TEST_TMP/does-not-exist"
     run load_config
     [ "$status" -eq 0 ]
+}
+
+# ---------- mirror_canvas_args ----------
+
+@test "mirror_canvas_args: full-screen canvas outside mirror mode (no SEED)" {
+    SEED=""
+    MIRROR_CANVAS_COLS="86"
+    MIRROR_CANVAS_ROWS="49"
+    run mirror_canvas_args
+    [ "$status" -eq 0 ]
+    [ "$output" = "--canvas-width 0 --canvas-height 0" ]
+}
+
+@test "mirror_canvas_args: fixed canvas in mirror mode when both dims set" {
+    SEED="123"
+    MIRROR_CANVAS_COLS="86"
+    MIRROR_CANVAS_ROWS="49"
+    run mirror_canvas_args
+    [ "$status" -eq 0 ]
+    [ "$output" = "--canvas-width 86 --canvas-height 49" ]
+}
+
+@test "mirror_canvas_args: full-screen canvas in mirror mode when dims unset" {
+    SEED="123"
+    MIRROR_CANVAS_COLS=""
+    MIRROR_CANVAS_ROWS=""
+    run mirror_canvas_args
+    [ "$status" -eq 0 ]
+    [ "$output" = "--canvas-width 0 --canvas-height 0" ]
 }
 
 # ---------- logo resolution ----------

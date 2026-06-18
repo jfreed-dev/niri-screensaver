@@ -199,7 +199,10 @@ By default each output runs **independently** — a different random effect per
 screen. Set `MULTI_MONITOR_MODE=mirror` (config, or the plugin's **Multi-monitor
 mode** dropdown) to show the **same** effect on every output instead. Mirroring
 is exact on monitors of the same resolution; on mismatched resolutions the same
-effect plays but the layout differs (the canvas tracks each terminal's size).
+effect plays but the layout differs (the canvas tracks each terminal's size). To
+make it pixel-identical across mismatched resolutions too, set
+`MIRROR_CANVAS_COLS`/`MIRROR_CANVAS_ROWS` to lock the canvas to a fixed centered
+box (see [Configuration](#configuration)).
 
 ## Configuration
 
@@ -223,8 +226,10 @@ effect plays but the layout differs (the canvas tracks each terminal's size).
 | `DISMISS_ON_KEY` | `true` | Any key dismisses; ESC and mouse always dismiss |
 | `RANDOM_LOGO` | `false` | When `true`, pick a random `*.txt` from `LOGO_DIR` before each effect cycle |
 | `LOGO_DIR` | _empty_ | Directory the random picker scans. Defaults to the installed `share/logos/` |
-| `MULTI_MONITOR_MODE` | `independent` | `independent` = each output randomizes its own effect; `mirror` = all outputs share one seed (and one logo when `RANDOM_LOGO` is set) so they show the same effect. Mirror is most coherent on matched-resolution monitors |
+| `MULTI_MONITOR_MODE` | `independent` | `independent` = each output randomizes its own effect; `mirror` = all outputs share one seed (and one logo when `RANDOM_LOGO` is set) so they show the same effect. Mirror is most coherent on matched-resolution monitors; set `MIRROR_CANVAS_COLS`/`ROWS` for a pixel-identical centered box across mismatched resolutions |
 | `MIRROR_INTERVAL` | `8` | Mirror mode only: seconds per effect window. All monitors switch effect on the same wall-clock boundary; lower = faster changes |
+| `MIRROR_CANVAS_COLS` | _empty_ | Mirror mode only: lock the `tte` canvas to this many columns so the effect renders identically across mismatched-resolution monitors. Pairs with `MIRROR_CANVAS_ROWS` (both required, positive integers). Empty = full-screen canvas (per-monitor layout); set = the effect plays in a centered fixed box |
+| `MIRROR_CANVAS_ROWS` | _empty_ | Mirror mode only: canvas height in rows; pairs with `MIRROR_CANVAS_COLS`. Size to fit your tallest logo — shipped logos run up to 86×49 cells |
 
 On launch, the launcher parks the mouse pointer in the bottom-right corner via
 `wlrctl` (preferred) or `ydotool` if either is installed. For a full hide,

@@ -5,6 +5,24 @@ All notable changes to **niri-screensaver** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Mirror mode: pixel-identical rendering across mismatched-resolution
+  monitors (#14).** Two new config keys, `MIRROR_CANVAS_COLS` and
+  `MIRROR_CANVAS_ROWS`, lock `tte`'s canvas to a fixed cell box in mirror mode
+  (`--canvas-width`/`--canvas-height`, centered via the `--anchor-canvas c`
+  already passed at every call site). Because the animated region is then the
+  same cell grid on every output, `tte`'s deterministic RNG renders
+  byte-identical animations even when the monitors differ in resolution —
+  previously mirror only matched on equal-resolution outputs and otherwise
+  played the same effect with a different layout. Opt-in: leave both empty (the
+  default) to keep the full-screen, per-monitor canvas. Both must be positive
+  integers to take effect; a blank, garbage, or half-set value falls back to
+  full screen. Like `MIRROR_INTERVAL`, it's an advanced config-file knob and is
+  not surfaced in the Noctalia plugin UI.
+
 ## [0.6.1] — 2026-06-03
 
 ### Added
