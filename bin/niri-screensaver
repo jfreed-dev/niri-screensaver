@@ -70,6 +70,25 @@ MIRROR_INTERVAL="${MIRROR_INTERVAL:-8}"
 MIRROR_CANVAS_COLS="${MIRROR_CANVAS_COLS:-}"
 MIRROR_CANVAS_ROWS="${MIRROR_CANVAS_ROWS:-}"
 
+# Where the driver records this terminal's cell grid so the launcher can
+# auto-derive a fixed mirror canvas from the smallest output (#24). The launcher
+# can't measure cell metrics without a terminal, so when it asks (via
+# --measure-logical), the driver writes its output's logical pixel size paired
+# with its actual cell grid here; the launcher reads the ratio next launch. Lives
+# in the config dir so both sides resolve it identically.
+CELL_METRICS_FILE="${CELL_METRICS_FILE:-${SCREENSAVER_DIR}/.cell-metrics}"
+
+# Set from --measure-logical "WxH" (this output's logical pixel size, passed by
+# the launcher) to request a one-shot cell-metrics cache refresh on this run.
+# Empty = don't measure.
+MEASURE_LOGICAL=""
+
+# Seconds between the settle reads in write_cell_metrics. Each surface opens on
+# the focused output and is moved to its target a beat later (#11), resizing the
+# terminal; we wait for the grid to quiesce before recording it. Overridable so
+# the unit tests can drop it to 0.
+CELL_MEASURE_SETTLE_SECS="${CELL_MEASURE_SETTLE_SECS:-0.4}"
+
 # Cached by check_dependencies: "--no-restore-cursor" when the installed tte
 # supports it and we're hiding the cursor, else empty. tte otherwise re-shows
 # the cursor when an effect ends, flashing a white cursor block between effects.
@@ -239,6 +258,45 @@ mirror_canvas_args() {
     fi
 }
 
+# Record this terminal's cell grid for the launcher's mirror auto-derive (#24).
+# Pairs the output's logical pixel size (arg "WxH", supplied by the launcher,
+# which is the only side that knows it) with the actual cell grid (tput) so the
+# launcher can recover cells-per-logical-pixel — a font-determined constant that
+# is the same on every output — and size the smallest output's grid next launch.
+# Written atomically (temp + mv) since every mirror surface may refresh it
+# concurrently; the ratio is identical across outputs, so last-writer-wins is
+# safe. Silently no-ops on any bad/unavailable value — it's a best-effort cache.
+write_cell_metrics() {
+    local spec="$1" lw lh cols rows c0 r0 tmp
+    lw="${spec%x*}"; lh="${spec#*x}"
+    [[ "$lw" =~ ^[1-9][0-9]*$ && "$lh" =~ ^[1-9][0-9]*$ ]] || return 1
+    # The surface opens fullscreen on the focused output, then the launcher moves
+    # it to its target output (#11), which resizes the terminal a beat later.
+    # Record this output's settled grid, not the transient focused-output size:
+    # wait for two reads CELL_MEASURE_SETTLE_SECS apart to agree (the gap is long
+    # enough that a pending move lands between them). Capped so a stuck resize
+    # can't stall startup — the last read is used regardless.
+    cols=$(tput cols 2>/dev/null); rows=$(tput lines 2>/dev/null)
+    for _ in $(seq 1 6); do
+        c0="$cols"; r0="$rows"
+        sleep "$CELL_MEASURE_SETTLE_SECS"
+        cols=$(tput cols 2>/dev/null); rows=$(tput lines 2>/dev/null)
+        [[ "$cols" == "$c0" && "$rows" == "$r0" ]] && break
+    done
+    [[ "$cols" =~ ^[1-9][0-9]*$ && "$rows" =~ ^[1-9][0-9]*$ ]] || return 1
+    tmp="${CELL_METRICS_FILE}.tmp.$$"
+    if {
+        echo "CELL_REF_LOGICAL_W=$lw"
+        echo "CELL_REF_COLS=$cols"
+        echo "CELL_REF_LOGICAL_H=$lh"
+        echo "CELL_REF_ROWS=$rows"
+    } > "$tmp" 2>/dev/null && mv -f "$tmp" "$CELL_METRICS_FILE" 2>/dev/null; then
+        return 0
+    fi
+    rm -f "$tmp" 2>/dev/null
+    return 1
+}
+
 run_fade_in() {
     local logo_file="$1" effect="${FADE_IN_EFFECT:-}"
     [[ -z "$effect" ]] && return 0
@@ -387,6 +445,16 @@ run_screensaver() {
 
     local effect_args
     effect_args=$(build_effect_args)
+
+    # Refresh the cell-metrics cache when the launcher asked (mirror auto-derive,
+    # #24). Measured here — after the terminal has settled at its fullscreen size,
+    # the same grid tte renders into — so the cached cols/rows pair correctly with
+    # the launcher-supplied fullscreen logical size. Best-effort and side-effect-
+    # free for this run (it only informs the next launch's sizing), so failure is
+    # ignored.
+    if [[ -n "$MEASURE_LOGICAL" ]]; then
+        write_cell_metrics "$MEASURE_LOGICAL" || true
+    fi
 
     while true; do
         # Re-roll the logo per effect cycle when RANDOM_LOGO is on. Falls back
@@ -544,19 +612,32 @@ EOF
 main() {
     load_config
 
+    # Parse options in any position, collecting non-option words as positionals.
+    # The launcher invokes us as `run --seed N --logo X ...` — the command word
+    # first, options after — so a loop that stopped at the first positional would
+    # silently drop every flag (including --seed/--logo, which mirror mode needs).
+    # Gather options wherever they appear; the command is the first positional
+    # and any effect name the second.
+    local -a positionals=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -l|--logo) LOGO_FILE="$2"; shift 2 ;;
             -f|--fps)  FRAME_RATE="$2"; shift 2 ;;
             -s|--seed) SEED="$2"; shift 2 ;;
+            # Launcher-supplied in mirror auto-derive (#24); rarely set by hand.
+            # --mirror-canvas-* override config so an auto-derived box wins for a
+            # run without being persisted; both come from validated launcher math.
+            --mirror-canvas-cols) MIRROR_CANVAS_COLS="$2"; shift 2 ;;
+            --mirror-canvas-rows) MIRROR_CANVAS_ROWS="$2"; shift 2 ;;
+            --measure-logical)    MEASURE_LOGICAL="$2"; shift 2 ;;
             -h|--help) usage; exit 0 ;;
             -*)        log_error "Unknown option: $1"; usage; exit 1 ;;
-            *)         break ;;
+            *)         positionals+=("$1"); shift ;;
         esac
     done
 
-    local command="${1:-run}"
-    shift 2>/dev/null || true
+    local command="${positionals[0]:-run}"
+    local effect="${positionals[1]:-}"
 
     case "$command" in
         run)
@@ -567,16 +648,16 @@ main() {
         test)
             check_dependencies
             ensure_config_dir
-            run_single_effect "${1:-}"
+            run_single_effect "$effect"
             ;;
         preview)
             check_dependencies
             ensure_config_dir
-            if [[ -z "${1:-}" ]]; then
+            if [[ -z "$effect" ]]; then
                 log_error "preview requires an effect name (try '$(basename "$0") effects')"
                 exit 1
             fi
-            run_single_effect "$1"
+            run_single_effect "$effect"
             ;;
         effects|list)
             check_dependencies

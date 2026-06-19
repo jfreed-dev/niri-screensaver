@@ -6,6 +6,8 @@ setup() {
     load test_helper
     TEST_TMP="$(mktemp -d)"
     source_driver
+    # Drop the cell-grid settle wait so write_cell_metrics tests don't sleep.
+    CELL_MEASURE_SETTLE_SECS=0
 }
 
 teardown() {
@@ -123,6 +125,74 @@ teardown() {
     run mirror_canvas_args
     [ "$status" -eq 0 ]
     [ "$output" = "--canvas-width 0 --canvas-height 0" ]
+}
+
+# ---------- write_cell_metrics (mirror auto-derive cache, #24) ----------
+
+@test "write_cell_metrics: pairs the logical size with the measured cell grid" {
+    CELL_METRICS_FILE="$TEST_TMP/cells"
+    tput() { case "$1" in cols) echo 200 ;; lines) echo 60 ;; esac; }
+    write_cell_metrics "1440x960"
+    grep -qx 'CELL_REF_LOGICAL_W=1440' "$CELL_METRICS_FILE"
+    grep -qx 'CELL_REF_COLS=200' "$CELL_METRICS_FILE"
+    grep -qx 'CELL_REF_LOGICAL_H=960' "$CELL_METRICS_FILE"
+    grep -qx 'CELL_REF_ROWS=60' "$CELL_METRICS_FILE"
+}
+
+@test "write_cell_metrics: rejects a half-specified logical size, writes nothing" {
+    CELL_METRICS_FILE="$TEST_TMP/cells"
+    tput() { echo 200; }
+    run write_cell_metrics "1440x"
+    [ "$status" -ne 0 ]
+    [ ! -f "$CELL_METRICS_FILE" ]
+}
+
+@test "write_cell_metrics: skips when the cell grid is unavailable" {
+    CELL_METRICS_FILE="$TEST_TMP/cells"
+    tput() { echo ""; }
+    run write_cell_metrics "1440x960"
+    [ "$status" -ne 0 ]
+    [ ! -f "$CELL_METRICS_FILE" ]
+}
+
+# ---------- main: option parsing (#24) ----------
+
+# The launcher invokes the driver as `run --seed N --logo X ...`, i.e. options
+# AFTER the command word. These assert main() honors that order — a regression
+# guard for the parse bug that silently dropped mirror's --seed/--logo.
+
+@test "main: parses options that follow the command word" {
+    check_dependencies() { :; }
+    ensure_config_dir() { :; }
+    run_screensaver() { echo "SEED=$SEED LOGO=$LOGO_FILE COLS=$MIRROR_CANVAS_COLS ROWS=$MIRROR_CANVAS_ROWS MEAS=$MEASURE_LOGICAL"; }
+    CONFIG_FILE="$TEST_TMP/none"
+    run main run --seed 7 --logo /tmp/x --mirror-canvas-cols 180 --mirror-canvas-rows 50 --measure-logical 1440x960
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SEED=7"* ]]
+    [[ "$output" == *"LOGO=/tmp/x"* ]]
+    [[ "$output" == *"COLS=180"* ]]
+    [[ "$output" == *"ROWS=50"* ]]
+    [[ "$output" == *"MEAS=1440x960"* ]]
+}
+
+@test "main: test command still takes its effect-name positional" {
+    check_dependencies() { :; }
+    ensure_config_dir() { :; }
+    run_single_effect() { echo "effect=$1"; }
+    CONFIG_FILE="$TEST_TMP/none"
+    run main test slide
+    [ "$status" -eq 0 ]
+    [ "$output" = "effect=slide" ]
+}
+
+@test "main: defaults to the run command with no args" {
+    check_dependencies() { :; }
+    ensure_config_dir() { :; }
+    run_screensaver() { echo "ran run"; }
+    CONFIG_FILE="$TEST_TMP/none"
+    run main
+    [ "$status" -eq 0 ]
+    [ "$output" = "ran run" ]
 }
 
 # ---------- logo resolution ----------
