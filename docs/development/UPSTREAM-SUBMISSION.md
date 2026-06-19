@@ -5,29 +5,40 @@ audiences:
 
 | Target | What it lists | Audience |
 |--------|---------------|----------|
-| [`noctalia-dev/noctalia-plugins`](https://github.com/noctalia-dev/noctalia-plugins) | Just the QML plugin (Bar widget + idle wiring) | Noctalia users browsing the Plugin Manager |
+| [`noctalia-dev/legacy-v4-plugins`](https://github.com/noctalia-dev/legacy-v4-plugins) | Just the QML plugin (Bar widget + idle wiring) | Noctalia **v4** users browsing the Plugin Manager |
 | [`niri-wm/awesome-niri`](https://github.com/niri-wm/awesome-niri) | The whole project (CLI + plugin together) | Anyone using niri who finds it via the curated list |
 
-Both are PR-driven against external repos. Submit to **noctalia-plugins
-first** — getting indexed in Noctalia's Plugin Manager surfaces the
-project to the most relevant audience. The awesome-niri PR is a
-one-liner you can do anytime after.
+Both are PR-driven against external repos. The plugin registry is the higher-value
+target — being indexed in Noctalia's Plugin Manager surfaces the project to the
+most relevant audience. The awesome-niri PR is a one-liner you can do anytime.
 
-> **Status (2026-05-20):** Path A is submitted as
-> [noctalia-plugins#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852)
-> — **open, awaiting maintainer review**. Path B is **merged** as
-> [awesome-niri#53](https://github.com/niri-wm/awesome-niri/pull/53). The steps
-> below are retained as the submission playbook — they also cover re-submission
-> and routine per-release updates.
+> **Status (2026-06-19):** Path A is **merged and live** — the initial submission
+> [#852](https://github.com/noctalia-dev/legacy-v4-plugins/pull/852) and the 0.6.1
+> update merged; each release ships via a fresh PR (0.7.0 =
+> [#933](https://github.com/noctalia-dev/legacy-v4-plugins/pull/933), open).
+> Path B is **merged** as
+> [awesome-niri#53](https://github.com/niri-wm/awesome-niri/pull/53).
+>
+> **Two registry changes since this playbook was written:**
+>
+> 1. The registry repo was **renamed** `noctalia-plugins` → `legacy-v4-plugins`
+>    (old links redirect; the mechanics below are unchanged).
+> 2. **Noctalia v5** replaced the QML plugin model with **Luau** (`plugin.toml` +
+>    `.luau` entries, `catalog.toml` index) split across `official-plugins`
+>    (core-team only) and `community-plugins` (**not accepting submissions yet**).
+>    niri-screensaver stays a v4 plugin; a v5 port is a full rewrite and isn't
+>    pursued here yet. The steps below apply to the **v4 legacy** registry.
 
 ---
 
-## Path A — noctalia-dev/noctalia-plugins (primary)
+## Path A — noctalia-dev/legacy-v4-plugins (primary, v4)
 
-> **Status:** Submitted as
-> [#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852); open,
-> awaiting maintainer review. The `preview.png` (960×540) and manifest checks
-> below are already satisfied.
+> **Status:** Merged and live. Initial submission
+> [#852](https://github.com/noctalia-dev/legacy-v4-plugins/pull/852) and the 0.6.1
+> update are merged; per-release updates land via a new PR (0.7.0 =
+> [#933](https://github.com/noctalia-dev/legacy-v4-plugins/pull/933)). The
+> `preview.png` (960×540) and manifest checks below are already satisfied. Repo
+> renamed from `noctalia-plugins` — old URLs redirect.
 
 Noctalia's Plugin Manager pulls plugins from the registry repo, so
 landing here makes installation a one-click flow for users.

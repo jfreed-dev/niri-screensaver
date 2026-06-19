@@ -119,18 +119,24 @@ Cutting a release:
      and add a fresh empty `## [Unreleased]` section above it
    - Any other place that hard-codes version (`README.md` is generally
      version-agnostic)
-2. **Run `make health`** end-to-end. PASS only.
-3. **Commit:** `chore: release vX.Y.Z`
+2. **Run `make check` and `make health`** end-to-end. PASS only.
+3. **Land the `chore: release vX.Y.Z` commit via PR.** `main` is
+   branch-protected (PR + the 7 required checks, strict/up-to-date), so the
+   release commit can't be pushed directly — open a short PR, let CI go green,
+   squash-merge, then tag the merged commit.
 4. **Tag and push:**
    ```bash
-   git tag -a vX.Y.Z -m "Release vX.Y.Z"
-   git push --tags
+   git checkout main && git pull
+   git tag -a vX.Y.Z -m "vX.Y.Z — <one-line summary>"
+   git push origin vX.Y.Z
    ```
-5. **Create the GitHub release** with the changelog excerpt:
-   ```bash
-   gh release create vX.Y.Z --notes-from-tag
-   ```
-6. **Update the awesome-niri / noctalia-plugins entries** if anything
+   The tag push fans out automatically: `aur-publish.yml` syncs the stable AUR
+   package (and chains `aur-publish-git.yml` for `-git`), and the `release`
+   workflow **auto-creates the GitHub release** from the changelog excerpt.
+5. **Do NOT run `gh release create` by hand** — the `release` workflow already
+   made it on the tag push; a manual create fails with `tag_name already exists`.
+   Just confirm it published (`gh release view vX.Y.Z`).
+6. **Update the awesome-niri / plugin-registry entries** if anything
    user-visible changed — see
    [UPSTREAM-SUBMISSION.md](UPSTREAM-SUBMISSION.md).
 
@@ -139,7 +145,8 @@ Cutting a release:
 | Format | Status | Notes |
 |--------|--------|-------|
 | Source install (`./install.sh`) | **Shipped** | Default path, ~/.local prefix, no privileges needed |
-| Noctalia plugin registry | **Submitted** | PR [#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852) open, awaiting maintainer review. See [UPSTREAM-SUBMISSION.md](UPSTREAM-SUBMISSION.md). |
+| Noctalia plugin registry (v4) | **Shipped** | In the registry — submissions [#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852) and the 0.6.1 update merged; per-release updates land via a new PR (0.7.0 = [#933](https://github.com/noctalia-dev/legacy-v4-plugins/pull/933)). The repo was renamed `noctalia-plugins` → `legacy-v4-plugins`. See [UPSTREAM-SUBMISSION.md](UPSTREAM-SUBMISSION.md). |
+| Noctalia v5 plugin system | **Not ported** | v5 replaced the QML model with Luau (`plugin.toml` + `.luau`); the v5 community registry isn't accepting submissions yet. niri-screensaver remains a v4 plugin. See [UPSTREAM-SUBMISSION.md](UPSTREAM-SUBMISSION.md). |
 | awesome-niri listing | **Listed** | Merged via [PR #53](https://github.com/niri-wm/awesome-niri/pull/53). |
 | AUR | **Shipped** | Two packages: `niri-screensaver` (stable, tracks tags) and `niri-screensaver-git` (HEAD). A `v*` tag push auto-syncs the stable package via `aur-publish.yml`; the `-git` package recomputes `pkgver` at build time. |
 | Flatpak / .deb | **Not planned** | The bash CLI works fine via `~/.local`; sandboxing TTE + Alacritty + niri IPC isn't worth the surface area. |
@@ -152,9 +159,9 @@ make pre-commit                       # before every push
 make plugin-link                      # symlink for hot-reload
 niri-screensaver-ctl test             # render single effect inline
 
-# release
-make health                           # full health check
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push --tags
-gh release create vX.Y.Z --notes-from-tag
+# release (release commit lands via PR first — main is protected)
+make check && make health             # gates + full health check
+git checkout main && git pull         # after the release PR merges
+git tag -a vX.Y.Z -m "vX.Y.Z — summary"
+git push origin vX.Y.Z                # auto: AUR sync + GitHub release
 ```
