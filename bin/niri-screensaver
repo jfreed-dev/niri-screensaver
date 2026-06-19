@@ -434,7 +434,9 @@ run_screensaver() {
     # the launcher-supplied fullscreen logical size. Best-effort and side-effect-
     # free for this run (it only informs the next launch's sizing), so failure is
     # ignored.
-    [[ -n "$MEASURE_LOGICAL" ]] && write_cell_metrics "$MEASURE_LOGICAL" || true
+    if [[ -n "$MEASURE_LOGICAL" ]]; then
+        write_cell_metrics "$MEASURE_LOGICAL" || true
+    fi
 
     while true; do
         # Re-roll the logo per effect cycle when RANDOM_LOGO is on. Falls back
