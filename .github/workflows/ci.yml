@@ -14,7 +14,7 @@ jobs:
     name: shellcheck (bash scripts)
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Run shellcheck
         run: |
           shellcheck -x \
@@ -29,7 +29,7 @@ jobs:
     name: json validate (manifest, i18n)
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Validate JSON files
         run: bash scripts/json-validate.sh
 
@@ -37,7 +37,7 @@ jobs:
     name: doc links (markdown + inline path mentions)
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Check relative paths in docs resolve in-tree
         run: bash scripts/check-doc-links.sh
 
@@ -45,14 +45,14 @@ jobs:
     name: typos (spell check)
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: crate-ci/typos@v1.47.2
 
   markdownlint:
     name: markdownlint (md hygiene)
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: DavidAnson/markdownlint-cli2-action@v23
         with:
           config: .markdownlint-cli2.jsonc
@@ -61,7 +61,7 @@ jobs:
     name: actionlint (workflow hygiene)
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Download actionlint
         id: get_actionlint
         run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
@@ -79,7 +79,7 @@ jobs:
     name: coverage (bats + kcov)
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install bats + kcov
         run: sudo apt-get update && sudo apt-get install -y bats kcov
       - name: Run bats under kcov
