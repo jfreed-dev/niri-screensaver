@@ -150,12 +150,12 @@ Then enable it in **Noctalia → Settings → Plugins**.
 > auto-flow — re-run the `cp -r` after each upgrade if you want the
 > latest plugin code.
 
-### Option B — Install from the Noctalia plugin registry (any distro)
+### Option B — Install from the Noctalia plugin registry (Noctalia v4)
 
-> **Pending registry acceptance.** Until
-> [noctalia-plugins#852](https://github.com/noctalia-dev/noctalia-plugins/pull/852)
-> merges, `niri-screensaver` won't appear in the registry browser yet — use
-> Option A (AUR) or Option C below in the meantime.
+> **Available** in the registry for **Noctalia v4** (the plugin targets
+> `minNoctaliaVersion 4.7.0`). Noctalia **v5** moved to a new Luau plugin system
+> and a separate registry that isn't accepting community plugins yet, so on v5
+> use Option A (AUR) or Option C until a v5 port lands.
 
 Open **Noctalia → Settings → Plugins**, find `niri-screensaver` in the
 registry browser, install. The plugin lands in
