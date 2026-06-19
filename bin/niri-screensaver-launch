@@ -16,6 +16,10 @@ CONFIG_FILE="${CONFIG_FILE:-${CONFIG_DIR}/config}"
 PID_FILE="${CONFIG_DIR}/screensaver.pid"
 TOGGLE_FILE="${CONFIG_DIR}/disabled"
 LAUNCH_STAMP_FILE="${CONFIG_DIR}/launch.timestamp"
+# Cell-grid cache the inner driver writes (it's the only side with a terminal to
+# measure) and this launcher reads to auto-size the mirror canvas (#24). Same
+# path the driver derives from its config dir.
+CELL_METRICS_FILE="${CELL_METRICS_FILE:-${CONFIG_DIR}/.cell-metrics}"
 
 # Power-aware launch gating: skip auto-launch when on battery below this
 # percentage. 0 disables the check. Sourced from the same config file the
@@ -121,6 +125,17 @@ output_names() {
     niri msg --json outputs 2>/dev/null | jq -r 'keys[]' 2>/dev/null
 }
 
+# Echo "name<TAB>logical_width<TAB>logical_height" for every output that has a
+# logical geometry (i.e. is actually on), in the same sorted order as
+# output_names. Outputs with a null `logical` (disabled) are skipped. Feeds the
+# mirror auto-derive math; niri/jq-dependent, so not unit-tested directly.
+output_geometry() {
+    niri msg --json outputs 2>/dev/null \
+        | jq -r 'to_entries | sort_by(.key) | .[].value
+                 | select(.logical != null)
+                 | "\(.name)\t\(.logical.width)\t\(.logical.height)"' 2>/dev/null
+}
+
 # Echo the ids of all currently-mapped screensaver windows, one per line.
 # Matches our spawn --class (Wayland app_id). niri's windows query has no
 # 'output' field, so placement is driven (spawn -> detect new id -> move),
@@ -171,6 +186,130 @@ setup_mirror_args() {
     log_info "Mirror mode: shared seed ${seed}${logo_note}"
 }
 
+# Read "name<TAB>W<TAB>H" lines on stdin and echo "Wmin Hmin Wmax Hmax" across
+# all lines whose W and H are integers. Echoes nothing when no valid line is
+# seen. Pure (no niri/jq), so it's unit-tested against fixture lines.
+mirror_extent() {
+    awk -F'\t' '
+        $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ {
+            if (n == 0) { wmin = wmax = $2; hmin = hmax = $3 }
+            if ($2 < wmin) wmin = $2; if ($2 > wmax) wmax = $2
+            if ($3 < hmin) hmin = $3; if ($3 > hmax) hmax = $3
+            n++
+        }
+        END { if (n > 0) print wmin, hmin, wmax, hmax }
+    '
+}
+
+# Load the driver-written cell-grid cache into CELL_REF_* globals. Returns
+# non-zero (and leaves the globals unset) when the file is missing or any of the
+# four values isn't a positive integer, so a half-written or stale-blank cache
+# can't feed bad math into derive_mirror_canvas. Parsed line-by-line rather than
+# sourced — it's a generated file, but no reason to eval it.
+read_cell_metrics() {
+    [[ -r "$CELL_METRICS_FILE" ]] || return 1
+    CELL_REF_LOGICAL_W=""; CELL_REF_COLS=""; CELL_REF_LOGICAL_H=""; CELL_REF_ROWS=""
+    local key val
+    while IFS='=' read -r key val; do
+        case "$key" in
+            CELL_REF_LOGICAL_W) CELL_REF_LOGICAL_W="$val" ;;
+            CELL_REF_COLS)      CELL_REF_COLS="$val" ;;
+            CELL_REF_LOGICAL_H) CELL_REF_LOGICAL_H="$val" ;;
+            CELL_REF_ROWS)      CELL_REF_ROWS="$val" ;;
+        esac
+    done < "$CELL_METRICS_FILE"
+    [[ "$CELL_REF_LOGICAL_W" =~ ^[1-9][0-9]*$ && "$CELL_REF_COLS" =~ ^[1-9][0-9]*$ \
+       && "$CELL_REF_LOGICAL_H" =~ ^[1-9][0-9]*$ && "$CELL_REF_ROWS" =~ ^[1-9][0-9]*$ ]]
+}
+
+# Echo "COLS ROWS" — the smallest output's cell grid — for a fixed mirror canvas,
+# given the smallest logical width/height (args). The cached reference output
+# pins cells-per-logical-pixel (a font constant, equal on every output), so
+# COLS = Wmin * ref_cols / ref_logical_w with integer (floor) division lands
+# exactly on the smallest output's own grid. Returns non-zero when no usable
+# cache exists or the result would be empty.
+derive_mirror_canvas() {
+    local wmin="$1" hmin="$2" cols rows
+    read_cell_metrics || return 1
+    cols=$(( wmin * CELL_REF_COLS / CELL_REF_LOGICAL_W ))
+    rows=$(( hmin * CELL_REF_ROWS / CELL_REF_LOGICAL_H ))
+    (( cols > 0 && rows > 0 )) || return 1
+    echo "$cols $rows"
+}
+
+# Echo "COLS ROWS" = the widest line length and line count of a logo file, used
+# to warn when an auto-derived canvas would clip the shared logo. Returns
+# non-zero if the file is unreadable.
+logo_dimensions() {
+    local f="$1"
+    [[ -r "$f" ]] || return 1
+    awk '{ if (length > w) w = length; n++ } END { print (w + 0), (n + 0) }' "$f"
+}
+
+# Outputs picked by setup_mirror_canvas: the one surface that should refresh the
+# cell-metrics cache, and its "WxH" logical size. Empty = don't measure this run.
+MEASURE_OUTPUT=""
+MEASURE_GEOM=""
+
+# Auto-derive a fixed mirror canvas from the smallest output (#24) and append
+# --mirror-canvas-cols/rows to DRIVER_ARGS for every driver. No-op unless mirror
+# mode is on, there's real geometry, and the user hasn't set MIRROR_CANVAS_COLS/
+# ROWS explicitly (those still win — the driver reads them straight from config).
+# Skips matched-resolution setups, where a fixed box equals the full-screen
+# canvas anyway, so only mismatched outputs (the #14 case) change behavior. Also
+# nominates one surface to refresh the cache via --measure-logical so the next
+# launch is calibrated even when this one had no cache yet.
+setup_mirror_canvas() {
+    MEASURE_OUTPUT=""; MEASURE_GEOM=""
+    [[ "$MULTI_MONITOR_MODE" == "mirror" ]] || return 0
+    # Explicit override wins; the driver honors config-set dims on its own.
+    [[ -n "${MIRROR_CANVAS_COLS:-}" && -n "${MIRROR_CANVAS_ROWS:-}" ]] && return 0
+
+    local geo extent
+    geo="$(output_geometry)"
+    [[ -n "$geo" ]] || return 0
+    extent="$(mirror_extent <<< "$geo")"
+    [[ -n "$extent" ]] || return 0
+    local wmin hmin wmax hmax mw mh
+    read -r wmin hmin wmax hmax <<< "$extent"
+    # Matched outputs: a fixed box matches the per-monitor canvas, so leave the
+    # full-screen path untouched (zero risk, no cache dependency).
+    [[ "$wmin" == "$wmax" && "$hmin" == "$hmax" ]] && return 0
+
+    # Nominate the first output with geometry to refresh the cache regardless of
+    # whether we can derive a canvas this run — keeps the next launch calibrated.
+    IFS=$'\t' read -r MEASURE_OUTPUT mw mh <<< "$(head -1 <<< "$geo")"
+    MEASURE_GEOM="${mw}x${mh}"
+
+    local canvas cols rows
+    if canvas="$(derive_mirror_canvas "$wmin" "$hmin")"; then
+        read -r cols rows <<< "$canvas"
+        DRIVER_ARGS+=( --mirror-canvas-cols "$cols" --mirror-canvas-rows "$rows" )
+        log_info "Mirror canvas auto-fit to smallest output: ${cols}x${rows} cells"
+        warn_if_logo_clipped "$cols" "$rows"
+    else
+        log_info "Mirror: calibrating cell metrics this run; canvas auto-fit applies next launch."
+    fi
+}
+
+# Warn (but proceed) when the auto-derived canvas is smaller than the shared
+# mirror logo, which would clip it on the smallest output. The logo is whatever
+# the driver will display: the one setup_mirror_args pre-picked (--logo in
+# DRIVER_ARGS), else the configured LOGO_FILE.
+warn_if_logo_clipped() {
+    local cols="$1" rows="$2" logo="" i
+    for (( i = 0; i < ${#DRIVER_ARGS[@]} - 1; i++ )); do
+        [[ "${DRIVER_ARGS[i]}" == "--logo" ]] && { logo="${DRIVER_ARGS[i + 1]}"; break; }
+    done
+    [[ -z "$logo" ]] && logo="${LOGO_FILE:-}"
+    local dims lw lh
+    dims="$(logo_dimensions "$logo")" || return 0
+    read -r lw lh <<< "$dims"
+    if (( lw > cols || lh > rows )); then
+        log_warn "Auto-fit canvas ${cols}x${rows} is smaller than logo $(basename "$logo") (${lw}x${lh}); it may clip on the smallest output. Set MIRROR_CANVAS_COLS/ROWS to override."
+    fi
+}
+
 # Extra args appended to the inner driver's `run` command, set up per launch.
 # Used by mirror mode to pass `--seed`/`--logo`; empty in independent mode. niri
 # msg action spawn runs in the compositor's environment (not ours), so per-launch
@@ -178,17 +317,20 @@ setup_mirror_args() {
 DRIVER_ARGS=()
 
 # Spawn alacritty via niri so it inherits the compositor environment cleanly.
+# Any args are appended after DRIVER_ARGS as per-surface driver flags (e.g. the
+# mirror auto-derive cache-refresh --measure-logical for one nominated output).
 spawn_one() {
+    local extra=("$@")
     if command -v niri &>/dev/null; then
         niri msg action spawn -- alacritty \
             --class "$WINDOW_CLASS" \
             --config-file "$ALACRITTY_CONFIG" \
-            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}"
+            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" "${extra[@]}"
     else
         alacritty \
             --class "$WINDOW_CLASS" \
             --config-file "$ALACRITTY_CONFIG" \
-            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" &
+            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" "${extra[@]}" &
     fi
 }
 
@@ -202,9 +344,11 @@ SPAWN_PIN_TIMEOUT_SECS="${NIRI_SCREENSAVER_SPAWN_PIN_TIMEOUT_SECS:-2}"
 # works under focus-follows-mouse where keyboard-focus cycling does not (#11).
 # Echoes nothing; logs a warning if the window never appears in time.
 spawn_and_pin() {
-    local output="$1" before after new_id="" steps
+    local output="$1"; shift
+    local extra=("$@")
+    local before after new_id="" steps
     before="$(screensaver_window_ids | sort)"
-    spawn_one
+    spawn_one "${extra[@]}"
     steps=$(( SPAWN_PIN_TIMEOUT_SECS * 10 ))
     for _ in $(seq 1 "$steps"); do
         sleep 0.1
@@ -350,9 +494,17 @@ launch_screensaver() {
         # Mirror mode only matters across multiple outputs; on one it would just
         # pin a single repeating seed, so it's gated here.
         setup_mirror_args
+        # Auto-size the shared canvas to the smallest output (mirror only, #24).
+        setup_mirror_canvas
         local output
+        local -a measure
         for output in "${outputs[@]}"; do
-            spawn_and_pin "$output"
+            # One surface refreshes the cell-metrics cache for the next launch.
+            measure=()
+            if [[ -n "$MEASURE_OUTPUT" && "$output" == "$MEASURE_OUTPUT" ]]; then
+                measure=( --measure-logical "$MEASURE_GEOM" )
+            fi
+            spawn_and_pin "$output" "${measure[@]}"
         done
     elif [[ ${#outputs[@]} -eq 1 ]]; then
         # Single output: no pinning needed, the lone surface fills it.

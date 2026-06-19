@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Mirror mode: automatic canvas fit on mismatched-resolution monitors
+  (#24).** Mirror now sizes the shared `tte` canvas to the smallest output's
+  cell grid by default — no config needed — so mismatched-resolution monitors
+  render byte-identical out of the box (previously you had to set
+  `MIRROR_CANVAS_COLS`/`ROWS` by hand; #14). The launcher can't measure cell
+  metrics without a terminal, so each mirror surface records its cell grid to a
+  `.cell-metrics` cache the launcher reads next launch; the first run on a new
+  monitor or font layout calibrates and applies the fit from the next launch.
+  Matched-resolution setups are unchanged (the fit equals the full-screen
+  canvas, so it's skipped), and an explicit `MIRROR_CANVAS_COLS`/`ROWS` still
+  wins. When the auto-fit box is smaller than the shared logo it's used anyway
+  with a warning, since it must fit the smallest output.
 - **Mirror mode: pixel-identical rendering across mismatched-resolution
   monitors (#14).** Two new config keys, `MIRROR_CANVAS_COLS` and
   `MIRROR_CANVAS_ROWS`, lock `tte`'s canvas to a fixed cell box in mirror mode
@@ -17,11 +29,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same cell grid on every output, `tte`'s deterministic RNG renders
   byte-identical animations even when the monitors differ in resolution —
   previously mirror only matched on equal-resolution outputs and otherwise
-  played the same effect with a different layout. Opt-in: leave both empty (the
-  default) to keep the full-screen, per-monitor canvas. Both must be positive
-  integers to take effect; a blank, garbage, or half-set value falls back to
-  full screen. Like `MIRROR_INTERVAL`, it's an advanced config-file knob and is
-  not surfaced in the Noctalia plugin UI.
+  played the same effect with a different layout. Manual override of the
+  automatic fit above: both must be positive integers to take effect; a blank,
+  garbage, or half-set value defers to the auto-fit. Like `MIRROR_INTERVAL`,
+  it's an advanced config-file knob and is not surfaced in the Noctalia plugin
+  UI.
+
+### Fixed
+
+- **Driver dropped options passed after the command word.** `main()` stopped
+  parsing at the first positional, so `niri-screensaver run --seed N --logo X`
+  — exactly how the launcher spawns each surface — silently discarded `--seed`
+  and `--logo`. Mirror mode therefore never received its shared seed and fell
+  back to independent per-monitor RNG on real hardware (it had only been
+  mock-tested). Options are now parsed in any position; the command is the first
+  positional and an effect name the second. This is what makes mirror's shared
+  seed/logo (and the #24 canvas flags) actually reach `tte`.
 
 ## [0.6.1] — 2026-06-03
 
