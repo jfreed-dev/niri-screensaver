@@ -1,7 +1,7 @@
 {
   "id": "niri-screensaver",
   "name": "Niri Screensaver",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "minNoctaliaVersion": "4.7.0",
   "author": "jfreed-dev",
   "license": "GPL-3.0-only",
