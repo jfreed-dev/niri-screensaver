@@ -83,6 +83,12 @@ CELL_METRICS_FILE="${CELL_METRICS_FILE:-${SCREENSAVER_DIR}/.cell-metrics}"
 # Empty = don't measure.
 MEASURE_LOGICAL=""
 
+# Seconds between the settle reads in write_cell_metrics. Each surface opens on
+# the focused output and is moved to its target a beat later (#11), resizing the
+# terminal; we wait for the grid to quiesce before recording it. Overridable so
+# the unit tests can drop it to 0.
+CELL_MEASURE_SETTLE_SECS="${CELL_MEASURE_SETTLE_SECS:-0.4}"
+
 # Cached by check_dependencies: "--no-restore-cursor" when the installed tte
 # supports it and we're hiding the cursor, else empty. tte otherwise re-shows
 # the cursor when an effect ends, flashing a white cursor block between effects.
@@ -261,10 +267,22 @@ mirror_canvas_args() {
 # concurrently; the ratio is identical across outputs, so last-writer-wins is
 # safe. Silently no-ops on any bad/unavailable value — it's a best-effort cache.
 write_cell_metrics() {
-    local spec="$1" lw lh cols rows tmp
+    local spec="$1" lw lh cols rows c0 r0 tmp
     lw="${spec%x*}"; lh="${spec#*x}"
     [[ "$lw" =~ ^[1-9][0-9]*$ && "$lh" =~ ^[1-9][0-9]*$ ]] || return 1
+    # The surface opens fullscreen on the focused output, then the launcher moves
+    # it to its target output (#11), which resizes the terminal a beat later.
+    # Record this output's settled grid, not the transient focused-output size:
+    # wait for two reads CELL_MEASURE_SETTLE_SECS apart to agree (the gap is long
+    # enough that a pending move lands between them). Capped so a stuck resize
+    # can't stall startup — the last read is used regardless.
     cols=$(tput cols 2>/dev/null); rows=$(tput lines 2>/dev/null)
+    for _ in $(seq 1 6); do
+        c0="$cols"; r0="$rows"
+        sleep "$CELL_MEASURE_SETTLE_SECS"
+        cols=$(tput cols 2>/dev/null); rows=$(tput lines 2>/dev/null)
+        [[ "$cols" == "$c0" && "$rows" == "$r0" ]] && break
+    done
     [[ "$cols" =~ ^[1-9][0-9]*$ && "$rows" =~ ^[1-9][0-9]*$ ]] || return 1
     tmp="${CELL_METRICS_FILE}.tmp.$$"
     if {

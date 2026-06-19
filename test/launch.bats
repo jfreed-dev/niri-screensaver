@@ -241,6 +241,30 @@ teardown() {
     [ "$MEASURE_GEOM" = "1440x960" ]
 }
 
+@test "setup_mirror_canvas: garbage MIRROR_CANVAS dims defer to auto-derive" {
+    MULTI_MONITOR_MODE=mirror
+    MIRROR_CANVAS_COLS=abc
+    MIRROR_CANVAS_ROWS=def
+    CELL_METRICS_FILE="$TEST_TMP/cells"
+    printf 'CELL_REF_LOGICAL_W=1440\nCELL_REF_COLS=180\nCELL_REF_LOGICAL_H=960\nCELL_REF_ROWS=50\n' > "$CELL_METRICS_FILE"
+    output_geometry() { printf 'eDP-1\t1440\t960\nDP-2\t3840\t2160\n'; }
+    DRIVER_ARGS=()
+    setup_mirror_canvas
+    [ "${DRIVER_ARGS[0]}" = "--mirror-canvas-cols" ]
+    [ "${DRIVER_ARGS[1]}" = "180" ]
+}
+
+@test "setup_mirror_canvas: valid explicit dims still suppress auto-derive" {
+    MULTI_MONITOR_MODE=mirror
+    MIRROR_CANVAS_COLS=86
+    MIRROR_CANVAS_ROWS=49
+    output_geometry() { printf 'eDP-1\t1440\t960\nDP-2\t3840\t2160\n'; }
+    DRIVER_ARGS=()
+    setup_mirror_canvas
+    [ "${#DRIVER_ARGS[@]}" -eq 0 ]
+    [ -z "$MEASURE_OUTPUT" ]
+}
+
 @test "setup_mirror_canvas: mismatched outputs without a cache only schedule measurement" {
     MULTI_MONITOR_MODE=mirror
     MIRROR_CANVAS_COLS=""

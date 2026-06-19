@@ -127,13 +127,16 @@ output_names() {
 
 # Echo "name<TAB>logical_width<TAB>logical_height" for every output that has a
 # logical geometry (i.e. is actually on), in the same sorted order as
-# output_names. Outputs with a null `logical` (disabled) are skipped. Feeds the
-# mirror auto-derive math; niri/jq-dependent, so not unit-tested directly.
+# output_names. Outputs with a null `logical` (disabled) are skipped. Logical
+# dims are floored to integers so fractional-scale outputs still parse as the
+# whole-cell grids downstream (a fractional value would be dropped by the integer
+# match in mirror_extent). Feeds the mirror auto-derive math; niri/jq-dependent,
+# so not unit-tested directly.
 output_geometry() {
     niri msg --json outputs 2>/dev/null \
         | jq -r 'to_entries | sort_by(.key) | .[].value
                  | select(.logical != null)
-                 | "\(.name)\t\(.logical.width)\t\(.logical.height)"' 2>/dev/null
+                 | "\(.name)\t\(.logical.width | floor)\t\(.logical.height | floor)"' 2>/dev/null
 }
 
 # Echo the ids of all currently-mapped screensaver windows, one per line.
@@ -262,8 +265,11 @@ MEASURE_GEOM=""
 setup_mirror_canvas() {
     MEASURE_OUTPUT=""; MEASURE_GEOM=""
     [[ "$MULTI_MONITOR_MODE" == "mirror" ]] || return 0
-    # Explicit override wins; the driver honors config-set dims on its own.
-    [[ -n "${MIRROR_CANVAS_COLS:-}" && -n "${MIRROR_CANVAS_ROWS:-}" ]] && return 0
+    # Explicit override wins, but only when both are valid positive integers —
+    # blank, garbage, or half-set defers to the auto-fit (same rule the driver
+    # applies to config), so a typo can't silently disable the fit. The driver
+    # honors valid config-set dims on its own, so we just bow out here.
+    [[ "${MIRROR_CANVAS_COLS:-}" =~ ^[1-9][0-9]*$ && "${MIRROR_CANVAS_ROWS:-}" =~ ^[1-9][0-9]*$ ]] && return 0
 
     local geo extent
     geo="$(output_geometry)"
@@ -295,13 +301,15 @@ setup_mirror_canvas() {
 # Warn (but proceed) when the auto-derived canvas is smaller than the shared
 # mirror logo, which would clip it on the smallest output. The logo is whatever
 # the driver will display: the one setup_mirror_args pre-picked (--logo in
-# DRIVER_ARGS), else the configured LOGO_FILE.
+# DRIVER_ARGS), else the configured LOGO_FILE, else the driver's default
+# logo.txt (the common case — the launcher never re-defaults LOGO_FILE).
 warn_if_logo_clipped() {
     local cols="$1" rows="$2" logo="" i
     for (( i = 0; i < ${#DRIVER_ARGS[@]} - 1; i++ )); do
         [[ "${DRIVER_ARGS[i]}" == "--logo" ]] && { logo="${DRIVER_ARGS[i + 1]}"; break; }
     done
     [[ -z "$logo" ]] && logo="${LOGO_FILE:-}"
+    [[ -z "$logo" || ! -r "$logo" ]] && logo="${CONFIG_DIR}/logo.txt"
     local dims lw lh
     dims="$(logo_dimensions "$logo")" || return 0
     read -r lw lh <<< "$dims"

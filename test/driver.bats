@@ -6,6 +6,8 @@ setup() {
     load test_helper
     TEST_TMP="$(mktemp -d)"
     source_driver
+    # Drop the cell-grid settle wait so write_cell_metrics tests don't sleep.
+    CELL_MEASURE_SETTLE_SECS=0
 }
 
 teardown() {
