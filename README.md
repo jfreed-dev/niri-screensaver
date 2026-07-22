@@ -225,6 +225,7 @@ pin an explicit centered box instead, which overrides the auto-fit (see
 | `SHOW_NOW_PLAYING` | `false` | Render the playerctl track title between effects (no-op if `playerctl` is missing or nothing is playing) |
 | `NOW_PLAYING_DURATION` | `3` | Seconds to display the now-playing overlay |
 | `CURSOR_HIDE` | `true` | Hide the *text* cursor (`tput civis`) |
+| `CURSOR_WARP` | `false` | Read by the launcher: park the mouse pointer bottom-right after launch via `wlrctl`/`ydotool`. Off by default because the injected motion is real input to the compositor and resets idle timers; see below |
 | `DISMISS_ON_KEY` | `true` | Any key dismisses; ESC and mouse always dismiss |
 | `RANDOM_LOGO` | `false` | When `true`, pick a random `*.txt` from `LOGO_DIR` before each effect cycle |
 | `LOGO_DIR` | _empty_ | Directory the random picker scans. Defaults to the installed `share/logos/` |
@@ -233,11 +234,16 @@ pin an explicit centered box instead, which overrides the auto-fit (see
 | `MIRROR_CANVAS_COLS` | _empty_ | Mirror mode only: lock the `tte` canvas to this many columns, overriding the automatic smallest-output fit. Pairs with `MIRROR_CANVAS_ROWS` (both required, positive integers). Empty = auto-fit on mismatched resolutions (full-screen on matched); set = the effect plays in this fixed centered box |
 | `MIRROR_CANVAS_ROWS` | _empty_ | Mirror mode only: canvas height in rows; pairs with `MIRROR_CANVAS_COLS`. Size to fit your tallest logo — shipped logos run up to 86×49 cells |
 
-On launch, the launcher parks the mouse pointer in the bottom-right corner via
-`wlrctl` (preferred) or `ydotool` if either is installed. For a full hide,
-combine with niri's `cursor { hide-after-inactive-ms 500 }` so the parked
-pointer disappears after the idle window. With neither tool installed, the
-launcher logs a one-time hint and falls back to niri-only auto-hide.
+By default the mouse pointer is left where it is. Parking it via `wlrctl` or
+`ydotool` injects pointer motion, which niri processes as real input and
+reports to `ext-idle-notify-v1` as activity. That reset is what killed the
+screensaver at launch before the kill debounce existed (#4), and it also
+pushes every later idle stage (lock, screen off) one screensaver-threshold
+late. To keep the pointer out of sight, set niri's
+`cursor { hide-after-inactive-ms 500 }`: by the time the screensaver launches
+the pointer is long hidden, and an activity-free launch keeps it that way.
+Set `CURSOR_WARP="true"` to restore the old parking behavior if you accept
+the idle-timer reset.
 
 ## Logos
 
