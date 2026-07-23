@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] — 2026-06-19
+## [0.8.0] — 2026-07-22
+
+### Fixed
+
+- **Launch no longer resets compositor idle timers; pointer parking is now
+  opt-in via `CURSOR_WARP` (default `false`) (#4).** The post-launch warp
+  injects virtual-pointer motion, and niri routes wlr-virtual-pointer (wlrctl)
+  and uinput (ydotool) events into `process_input_event`, which reports every
+  pointer event to `ext-idle-notify-v1` as activity (niri `src/input/mod.rs`;
+  window opening and focus changes never notify activity, so issue #4's
+  focus/enter hypothesis was wrong). Each launch therefore reset every idle
+  daemon timer: the flash-and-die from #4 was this reset arriving as
+  `resumeCommand`, and idle stages after the screensaver (lock, screen off)
+  fired one screensaver-threshold late. With the warp off, launch generates no
+  activity and downstream stages fire on schedule. Hide the pointer with
+  niri's `cursor { hide-after-inactive-ms 500 }` instead; set
+  `CURSOR_WARP="true"` to restore parking. New plugin setting `cursorWarp`
+  (default off) writes the key. The launch/kill debounce stays as a guard for
+  warp-enabled setups.
 
 ### Added
 
