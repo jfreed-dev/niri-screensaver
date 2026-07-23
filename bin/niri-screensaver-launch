@@ -41,11 +41,24 @@ RANDOM_LOGO="${RANDOM_LOGO:-false}"
 LOGO_FILE="${LOGO_FILE:-}"
 LOGO_DIR="${LOGO_DIR:-}"
 
-# Window-rule open-focused + fullscreen surface causes a Wayland focus/enter
-# event that ext-idle-notify-v1 treats as activity. Noctalia (and similar
-# idle daemons) then fire their resumeCommand within ~1s of launch, killing
-# the screensaver before it renders. Drop kill invocations that arrive
-# within this window. See issue #4.
+# Post-launch pointer parking (config-file key; the plugin writes it). Off by
+# default: warping goes through wlr-virtual-pointer or uinput, and niri routes
+# both into process_input_event, which reports every pointer event to
+# ext-idle-notify-v1 as activity (niri src/input/mod.rs). One warp therefore
+# resets EVERY idle daemon timer, so stages after the screensaver (lock,
+# screen off) fire one screensaver-threshold late, and a cursor already
+# hidden by niri's hide-after-inactive-ms pops back up over the animation.
+# Prefer 'cursor { hide-after-inactive-ms 500 }' in the niri config; enable
+# this only if you cannot use that and no later idle stages matter to you.
+CURSOR_WARP="${CURSOR_WARP:-false}"
+
+# With CURSOR_WARP enabled, the warp's injected motion is real input to the
+# compositor: idle daemons see activity and fire their resumeCommand within
+# ~1s of launch, killing the screensaver before it renders. Drop kill
+# invocations that arrive within this window. (Issue #4 originally blamed a
+# focus/enter event from the window rule's open-focused; niri only notifies
+# idle activity for input events, so the warp was the actual trigger. The
+# debounce stays as a guard for warp-enabled setups and other compositors.)
 KILL_DEBOUNCE_SECS="${NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS:-3}"
 
 # Resolve sibling assets: installed first, then dev-checkout fallback.
@@ -96,6 +109,7 @@ load_config() {
     : "${BATTERY_MIN_PERCENT:=0}"
     : "${MULTI_MONITOR_MODE:=independent}"
     : "${RANDOM_LOGO:=false}"
+    : "${CURSOR_WARP:=false}"
 }
 
 is_disabled() { [[ -f "$TOGGLE_FILE" ]]; }
@@ -391,10 +405,10 @@ kill_too_soon_after_launch() {
 }
 
 # Park the pointer in the bottom-right corner so it doesn't sit visible on top
-# of the screensaver. Niri's cursor.hide-after-inactive-ms then hides it after
-# the configured idle window. Tries wlrctl (wlr-virtual-pointer) first since
-# it's daemonless under niri; falls back to ydotool. No-op + one-time hint if
-# neither is installed.
+# of the screensaver. Tries wlrctl (wlr-virtual-pointer) first since it's
+# daemonless under niri; falls back to ydotool. No-op + one-time hint if
+# neither is installed. The injected motion counts as user input and resets
+# compositor idle timers, so call sites must gate on CURSOR_WARP (issue #4).
 warp_cursor_away() {
     if command -v wlrctl &>/dev/null; then
         wlrctl pointer move 1000000 1000000 2>/dev/null && return 0
@@ -404,6 +418,16 @@ warp_cursor_away() {
     fi
     log_info "Install wlrctl (or ydotool) to auto-park the pointer; or set 'cursor { hide-after-inactive-ms 500 }' in your niri config."
     return 1
+}
+
+# CURSOR_WARP gate for warp_cursor_away, split out so the policy is
+# unit-testable. The 0.2s pause lets the last alacritty map before the warp,
+# and runs before the inner driver enables mouse tracking so the motion
+# doesn't falsely dismiss the screensaver.
+maybe_warp_cursor() {
+    [[ "$CURSOR_WARP" == "true" ]] || return 0
+    sleep 0.2
+    warp_cursor_away || true
 }
 
 # True (0) if any AC/Mains adapter reports online — i.e. the machine is plugged
@@ -524,11 +548,10 @@ launch_screensaver() {
         spawn_one
     fi
 
-    # Park the pointer after the last alacritty has had a moment to map.
-    # Done before the inner driver enables mouse tracking, so the warp doesn't
-    # generate motion events that would falsely dismiss the screensaver.
-    sleep 0.2
-    warp_cursor_away || true
+    # Opt-in pointer parking; a no-op unless CURSOR_WARP="true" because the
+    # warp's injected motion resets compositor idle timers (see the
+    # CURSOR_WARP default near the top of this file).
+    maybe_warp_cursor
 }
 
 toggle_screensaver() {

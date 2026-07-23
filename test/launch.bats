@@ -56,6 +56,30 @@ teardown() {
     [ "$status" -ne 0 ]
 }
 
+# ---------- cursor-warp gating (issue #4 idle-timer reset) ----------
+
+@test "maybe_warp_cursor: skips the warp by default (CURSOR_WARP=false)" {
+    warp_cursor_away() { echo "warped"; }
+    CURSOR_WARP="false"
+    run maybe_warp_cursor
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "maybe_warp_cursor: warps when CURSOR_WARP=true" {
+    warp_cursor_away() { echo "warped"; }
+    CURSOR_WARP="true"
+    run maybe_warp_cursor
+    [ "$status" -eq 0 ]
+    [ "$output" = "warped" ]
+}
+
+@test "load_config: blank CURSOR_WARP from the plugin re-defaults to false" {
+    echo 'CURSOR_WARP=""' > "$CONFIG_FILE"
+    load_config
+    [ "$CURSOR_WARP" = "false" ]
+}
+
 # ---------- battery gating ----------
 
 @test "should_skip_for_battery: false when threshold is 0 (disabled)" {

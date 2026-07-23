@@ -89,7 +89,7 @@ installed `share/logos/`) and auto-refreshes when files appear or
 disappear; the fade lists come from `niri-screensaver-ctl effects`.
 
 Settings not surfaced in the UI (`FRAME_RATE`, `CLOCK_DURATION`,
-`CLOCK_FONT`, `CURSOR_HIDE`, `DISMISS_ON_KEY`) can be edited directly in
+`CLOCK_FONT`, `CURSOR_HIDE`, `CURSOR_WARP`, `DISMISS_ON_KEY`) can be edited directly in
 `~/.config/niri-screensaver/config` — they round-trip through the plugin on
 next reload.
 
