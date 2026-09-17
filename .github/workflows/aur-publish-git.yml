@@ -35,7 +35,7 @@ permissions:
 jobs:
   publish-git:
     name: publish niri-screensaver-git to AUR
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     # workflow_run only fires when the upstream workflow succeeded;
     # skip if it failed (no point publishing -git if stable failed).
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
