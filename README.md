@@ -54,29 +54,29 @@ Install your choice of terminal:
 
 - Alacritty:
 
-```bash
-# Arch / CachyOS
-paru -S  alacritty
-
-# Fedora / RHEL
-sudo dnf install alacritty
-
-# Debian / Ubuntu
-sudo apt install alacritty
-```
+    ```bash
+    # Arch / CachyOS
+    paru -S  alacritty
+  
+    # Fedora / RHEL
+    sudo dnf install alacritty
+  
+    # Debian / Ubuntu
+    sudo apt install alacritty
+    ```
 
 - Ghostty:
 
-```bash
-# Arch / CachyOS
-paru -S ghostty
-
-# Fedora / RHEL
-sudo dnf install ghostty
-
-# Debian / Ubuntu
-sudo apt install ghostty
-```
+    ```bash
+    # Arch / CachyOS
+    paru -S ghostty
+   
+    # Fedora / RHEL
+    sudo dnf install ghostty
+   
+    Debian / Ubuntu
+    sudo apt install ghostty
+    ```
 
 Install the other dependencies for your distro:
 
@@ -421,6 +421,8 @@ attribution adjusted, please open an issue.
   if you want them.
 
 ## Ghostty
+
+TODO: Update this documentation
 
 Ghostty is an alternative terminal emulator supported alongside Alacritty. To use it:
 
