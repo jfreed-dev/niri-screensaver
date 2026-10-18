@@ -11,6 +11,17 @@
 
 set -uo pipefail
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${CYAN}[INFO]${NC} $*"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $*"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/niri-screensaver}"
 CONFIG_FILE="${CONFIG_FILE:-${CONFIG_DIR}/config}"
 PID_FILE="${CONFIG_DIR}/screensaver.pid"
@@ -61,6 +72,25 @@ CURSOR_WARP="${CURSOR_WARP:-false}"
 # debounce stays as a guard for warp-enabled setups and other compositors.)
 KILL_DEBOUNCE_SECS="${NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS:-3}"
 
+# Read BATTERY_MIN_PERCENT (and any future launcher-relevant keys) from the
+# shared config file. The Noctalia plugin rewrites every key on each save,
+# including blanks, so re-apply the default when the sourced value is empty.
+load_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        # shellcheck source=/dev/null
+        source "$CONFIG_FILE"
+    fi
+    : "${BATTERY_MIN_PERCENT:=0}"
+    : "${MULTI_MONITOR_MODE:=independent}"
+    : "${RANDOM_LOGO:=false}"
+    : "${CURSOR_WARP:=false}"
+}
+
+# The window class for the terminal
+# This is appended to the terminal command both locally in and with niri
+# and it used as a key for pgrep/pkill etc
+WINDOW_CLASS="niri-screensaver"
+
 # Resolve sibling assets: installed first, then dev-checkout fallback.
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 DATA_CANDIDATES=(
@@ -79,38 +109,21 @@ resolve_data_dir() {
     return 1
 }
 
-DATA_DIR="$(resolve_data_dir || echo "${SCRIPT_DIR}/../share")"
-ALACRITTY_CONFIG="${ALACRITTY_CONFIG:-${DATA_DIR}/alacritty-screensaver.toml}"
-
 # The inner driver — installed alongside this launcher in the same bin dir.
 SCREENSAVER_BIN="${SCREENSAVER_BIN:-${SCRIPT_DIR}/niri-screensaver}"
 
-WINDOW_CLASS="niri-screensaver"
+DATA_DIR="$(resolve_data_dir || echo "${SCRIPT_DIR}/../share")"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+TERMINAL="${TERMINAL:-alacritty}"
+if [[ "$TERMINAL" == "alacritty" ]]; then
+    TERMINAL_CONFIG="${TERMINAL_CONFIG:-${DATA_DIR}/alacritty-screensaver.toml}"
+else
+    TERMINAL_CONFIG="${TERMINAL_CONFIG:-${DATA_DIR}/ghostty-screensaver.conf}"
+    WINDOW_CLASS="com.mitchellh.ghostty.${WINDOW_CLASS}"
+fi
 
-log_info()    { echo -e "${CYAN}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[OK]${NC} $*"; }
-log_warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
-
-# Read BATTERY_MIN_PERCENT (and any future launcher-relevant keys) from the
-# shared config file. The Noctalia plugin rewrites every key on each save,
-# including blanks, so re-apply the default when the sourced value is empty.
-load_config() {
-    if [[ -f "$CONFIG_FILE" ]]; then
-        # shellcheck source=/dev/null
-        source "$CONFIG_FILE"
-    fi
-    : "${BATTERY_MIN_PERCENT:=0}"
-    : "${MULTI_MONITOR_MODE:=independent}"
-    : "${RANDOM_LOGO:=false}"
-    : "${CURSOR_WARP:=false}"
-}
+PROCESS_CMD="$TERMINAL --config-file=${TERMINAL_CONFIG} --class=${WINDOW_CLASS}"
+PROCESS_REGEX="$TERMINAL.*--config-file[ =]${TERMINAL_CONFIG}.*--class[ =]${WINDOW_CLASS}"
 
 is_disabled() { [[ -f "$TOGGLE_FILE" ]]; }
 
@@ -123,7 +136,7 @@ is_running() {
         fi
         rm -f "$PID_FILE"
     fi
-    pgrep -f "alacritty .*--class[ =]${WINDOW_CLASS}" &>/dev/null
+    pgrep -f "${PROCESS_REGEX}" &>/dev/null
 }
 
 count_outputs() {
@@ -147,8 +160,8 @@ output_names() {
 # match in mirror_extent). Feeds the mirror auto-derive math; niri/jq-dependent,
 # so not unit-tested directly.
 output_geometry() {
-    niri msg --json outputs 2>/dev/null \
-        | jq -r 'to_entries | sort_by(.key) | .[].value
+    niri msg --json outputs 2>/dev/null |
+        jq -r 'to_entries | sort_by(.key) | .[].value
                  | select(.logical != null)
                  | "\(.name)\t\(.logical.width | floor)\t\(.logical.height | floor)"' 2>/dev/null
 }
@@ -158,17 +171,26 @@ output_geometry() {
 # 'output' field, so placement is driven (spawn -> detect new id -> move),
 # not read back from here.
 screensaver_window_ids() {
-    niri msg --json windows 2>/dev/null \
-        | jq -r --arg cls "$WINDOW_CLASS" '.[] | select(.app_id == $cls) | .id' 2>/dev/null
+    niri msg --json windows 2>/dev/null |
+        jq -r --arg cls "$WINDOW_CLASS" '.[] | select(.app_id == $cls) | .id' 2>/dev/null
 }
 
 # Resolve the directory of selectable logos for a mirror-mode random pick.
 # Mirrors the inner driver's resolve_logo_dir order: explicit LOGO_DIR, then the
 # installed/dev logos dir, then the directory of LOGO_FILE.
 mirror_logo_dir() {
-    if [[ -n "${LOGO_DIR:-}" && -d "$LOGO_DIR" ]]; then echo "$LOGO_DIR"; return 0; fi
-    [[ -d "$DATA_DIR/logos" ]] && { echo "$DATA_DIR/logos"; return 0; }
-    [[ -n "${LOGO_FILE:-}" && -f "$LOGO_FILE" ]] && { dirname "$LOGO_FILE"; return 0; }
+    if [[ -n "${LOGO_DIR:-}" && -d "$LOGO_DIR" ]]; then
+        echo "$LOGO_DIR"
+        return 0
+    fi
+    [[ -d "$DATA_DIR/logos" ]] && {
+        echo "$DATA_DIR/logos"
+        return 0
+    }
+    [[ -n "${LOGO_FILE:-}" && -f "$LOGO_FILE" ]] && {
+        dirname "$LOGO_FILE"
+        return 0
+    }
     return 1
 }
 
@@ -190,13 +212,13 @@ setup_mirror_args() {
     DRIVER_ARGS=()
     [[ "$MULTI_MONITOR_MODE" == "mirror" ]] || return 0
     local seed
-    seed=$(( RANDOM * 32768 + RANDOM ))
-    DRIVER_ARGS+=( --seed "$seed" )
+    seed=$((RANDOM * 32768 + RANDOM))
+    DRIVER_ARGS+=(--seed "$seed")
     local logo_note=""
     if [[ "$RANDOM_LOGO" == "true" ]]; then
         local logo
         if logo="$(pick_one_logo)" && [[ -n "$logo" ]]; then
-            DRIVER_ARGS+=( --logo "$logo" )
+            DRIVER_ARGS+=(--logo "$logo")
             logo_note=", logo $(basename "$logo")"
         fi
     fi
@@ -225,18 +247,21 @@ mirror_extent() {
 # sourced — it's a generated file, but no reason to eval it.
 read_cell_metrics() {
     [[ -r "$CELL_METRICS_FILE" ]] || return 1
-    CELL_REF_LOGICAL_W=""; CELL_REF_COLS=""; CELL_REF_LOGICAL_H=""; CELL_REF_ROWS=""
+    CELL_REF_LOGICAL_W=""
+    CELL_REF_COLS=""
+    CELL_REF_LOGICAL_H=""
+    CELL_REF_ROWS=""
     local key val
     while IFS='=' read -r key val; do
         case "$key" in
-            CELL_REF_LOGICAL_W) CELL_REF_LOGICAL_W="$val" ;;
-            CELL_REF_COLS)      CELL_REF_COLS="$val" ;;
-            CELL_REF_LOGICAL_H) CELL_REF_LOGICAL_H="$val" ;;
-            CELL_REF_ROWS)      CELL_REF_ROWS="$val" ;;
+        CELL_REF_LOGICAL_W) CELL_REF_LOGICAL_W="$val" ;;
+        CELL_REF_COLS) CELL_REF_COLS="$val" ;;
+        CELL_REF_LOGICAL_H) CELL_REF_LOGICAL_H="$val" ;;
+        CELL_REF_ROWS) CELL_REF_ROWS="$val" ;;
         esac
-    done < "$CELL_METRICS_FILE"
-    [[ "$CELL_REF_LOGICAL_W" =~ ^[1-9][0-9]*$ && "$CELL_REF_COLS" =~ ^[1-9][0-9]*$ \
-       && "$CELL_REF_LOGICAL_H" =~ ^[1-9][0-9]*$ && "$CELL_REF_ROWS" =~ ^[1-9][0-9]*$ ]]
+    done <"$CELL_METRICS_FILE"
+    [[ "$CELL_REF_LOGICAL_W" =~ ^[1-9][0-9]*$ && "$CELL_REF_COLS" =~ ^[1-9][0-9]*$ &&
+        "$CELL_REF_LOGICAL_H" =~ ^[1-9][0-9]*$ && "$CELL_REF_ROWS" =~ ^[1-9][0-9]*$ ]]
 }
 
 # Echo "COLS ROWS" — the smallest output's cell grid — for a fixed mirror canvas,
@@ -248,9 +273,9 @@ read_cell_metrics() {
 derive_mirror_canvas() {
     local wmin="$1" hmin="$2" cols rows
     read_cell_metrics || return 1
-    cols=$(( wmin * CELL_REF_COLS / CELL_REF_LOGICAL_W ))
-    rows=$(( hmin * CELL_REF_ROWS / CELL_REF_LOGICAL_H ))
-    (( cols > 0 && rows > 0 )) || return 1
+    cols=$((wmin * CELL_REF_COLS / CELL_REF_LOGICAL_W))
+    rows=$((hmin * CELL_REF_ROWS / CELL_REF_LOGICAL_H))
+    ((cols > 0 && rows > 0)) || return 1
     echo "$cols $rows"
 }
 
@@ -277,7 +302,8 @@ MEASURE_GEOM=""
 # nominates one surface to refresh the cache via --measure-logical so the next
 # launch is calibrated even when this one had no cache yet.
 setup_mirror_canvas() {
-    MEASURE_OUTPUT=""; MEASURE_GEOM=""
+    MEASURE_OUTPUT=""
+    MEASURE_GEOM=""
     [[ "$MULTI_MONITOR_MODE" == "mirror" ]] || return 0
     # Explicit override wins, but only when both are valid positive integers —
     # blank, garbage, or half-set defers to the auto-fit (same rule the driver
@@ -288,23 +314,23 @@ setup_mirror_canvas() {
     local geo extent
     geo="$(output_geometry)"
     [[ -n "$geo" ]] || return 0
-    extent="$(mirror_extent <<< "$geo")"
+    extent="$(mirror_extent <<<"$geo")"
     [[ -n "$extent" ]] || return 0
     local wmin hmin wmax hmax mw mh
-    read -r wmin hmin wmax hmax <<< "$extent"
+    read -r wmin hmin wmax hmax <<<"$extent"
     # Matched outputs: a fixed box matches the per-monitor canvas, so leave the
     # full-screen path untouched (zero risk, no cache dependency).
     [[ "$wmin" == "$wmax" && "$hmin" == "$hmax" ]] && return 0
 
     # Nominate the first output with geometry to refresh the cache regardless of
     # whether we can derive a canvas this run — keeps the next launch calibrated.
-    IFS=$'\t' read -r MEASURE_OUTPUT mw mh <<< "$(head -1 <<< "$geo")"
+    IFS=$'\t' read -r MEASURE_OUTPUT mw mh <<<"$(head -1 <<<"$geo")"
     MEASURE_GEOM="${mw}x${mh}"
 
     local canvas cols rows
     if canvas="$(derive_mirror_canvas "$wmin" "$hmin")"; then
-        read -r cols rows <<< "$canvas"
-        DRIVER_ARGS+=( --mirror-canvas-cols "$cols" --mirror-canvas-rows "$rows" )
+        read -r cols rows <<<"$canvas"
+        DRIVER_ARGS+=(--mirror-canvas-cols "$cols" --mirror-canvas-rows "$rows")
         log_info "Mirror canvas auto-fit to smallest output: ${cols}x${rows} cells"
         warn_if_logo_clipped "$cols" "$rows"
     else
@@ -319,15 +345,18 @@ setup_mirror_canvas() {
 # logo.txt (the common case — the launcher never re-defaults LOGO_FILE).
 warn_if_logo_clipped() {
     local cols="$1" rows="$2" logo="" i
-    for (( i = 0; i < ${#DRIVER_ARGS[@]} - 1; i++ )); do
-        [[ "${DRIVER_ARGS[i]}" == "--logo" ]] && { logo="${DRIVER_ARGS[i + 1]}"; break; }
+    for ((i = 0; i < ${#DRIVER_ARGS[@]} - 1; i++)); do
+        [[ "${DRIVER_ARGS[i]}" == "--logo" ]] && {
+            logo="${DRIVER_ARGS[i + 1]}"
+            break
+        }
     done
     [[ -z "$logo" ]] && logo="${LOGO_FILE:-}"
     [[ -z "$logo" || ! -r "$logo" ]] && logo="${CONFIG_DIR}/logo.txt"
     local dims lw lh
     dims="$(logo_dimensions "$logo")" || return 0
-    read -r lw lh <<< "$dims"
-    if (( lw > cols || lh > rows )); then
+    read -r lw lh <<<"$dims"
+    if ((lw > cols || lh > rows)); then
         log_warn "Auto-fit canvas ${cols}x${rows} is smaller than logo $(basename "$logo") (${lw}x${lh}); it may clip on the smallest output. Set MIRROR_CANVAS_COLS/ROWS to override."
     fi
 }
@@ -338,21 +367,17 @@ warn_if_logo_clipped() {
 # choices must travel as argv, not exported env vars.
 DRIVER_ARGS=()
 
-# Spawn alacritty via niri so it inherits the compositor environment cleanly.
+# Spawn the terminal via niri so it inherits the compositor environment cleanly.
 # Any args are appended after DRIVER_ARGS as per-surface driver flags (e.g. the
 # mirror auto-derive cache-refresh --measure-logical for one nominated output).
 spawn_one() {
     local extra=("$@")
     if command -v niri &>/dev/null; then
-        niri msg action spawn -- alacritty \
-            --class "$WINDOW_CLASS" \
-            --config-file "$ALACRITTY_CONFIG" \
-            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" "${extra[@]}"
+        # shellcheck disable=SC2086
+        niri msg action spawn -- ${PROCESS_CMD} \
+            -e "${SCREENSAVER_BIN}" run "${DRIVER_ARGS[@]}" "${extra[@]}"
     else
-        alacritty \
-            --class "$WINDOW_CLASS" \
-            --config-file "$ALACRITTY_CONFIG" \
-            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" "${extra[@]}" &
+        "${PROCESS_CMD}" -e "${SCREENSAVER_BIN}" run "${DRIVER_ARGS[@]}" "${extra[@]}" &
     fi
 }
 
@@ -366,12 +391,13 @@ SPAWN_PIN_TIMEOUT_SECS="${NIRI_SCREENSAVER_SPAWN_PIN_TIMEOUT_SECS:-2}"
 # works under focus-follows-mouse where keyboard-focus cycling does not (#11).
 # Echoes nothing; logs a warning if the window never appears in time.
 spawn_and_pin() {
-    local output="$1"; shift
+    local output="$1"
+    shift
     local extra=("$@")
     local before after new_id="" steps
     before="$(screensaver_window_ids | sort)"
     spawn_one "${extra[@]}"
-    steps=$(( SPAWN_PIN_TIMEOUT_SECS * 10 ))
+    steps=$((SPAWN_PIN_TIMEOUT_SECS * 10))
     for _ in $(seq 1 "$steps"); do
         sleep 0.1
         after="$(screensaver_window_ids | sort)"
@@ -389,7 +415,7 @@ kill_screensaver() {
     if [[ -f "$PID_FILE" ]]; then
         rm -f "$PID_FILE"
     fi
-    pkill -f "alacritty .*--class[ =]${WINDOW_CLASS}" 2>/dev/null
+    pkill -f "${PROCESS_REGEX}" 2>/dev/null
     pkill -f "$(basename "$SCREENSAVER_BIN") run" 2>/dev/null
     return 0
 }
@@ -401,7 +427,7 @@ kill_too_soon_after_launch() {
     stamp=$(cat "$LAUNCH_STAMP_FILE" 2>/dev/null) || return 1
     [[ "$stamp" =~ ^[0-9]+$ ]] || return 1
     now=$(date +%s)
-    (( now - stamp < KILL_DEBOUNCE_SECS ))
+    ((now - stamp < KILL_DEBOUNCE_SECS))
 }
 
 # Park the pointer in the bottom-right corner so it doesn't sit visible on top
@@ -467,19 +493,19 @@ lowest_battery_capacity() {
 # present → never skip.
 should_skip_for_battery() {
     [[ "$BATTERY_MIN_PERCENT" =~ ^[0-9]+$ ]] || return 1
-    (( BATTERY_MIN_PERCENT > 0 )) || return 1
+    ((BATTERY_MIN_PERCENT > 0)) || return 1
     on_ac_power && return 1
     local cap
     cap=$(lowest_battery_capacity)
     [[ -n "$cap" ]] || return 1
-    (( cap < BATTERY_MIN_PERCENT ))
+    ((cap < BATTERY_MIN_PERCENT))
 }
 
 launch_screensaver() {
     local force=""
     for arg in "$@"; do
         case "$arg" in
-            force|-f|--force) force="force" ;;
+        force | -f | --force) force="force" ;;
         esac
     done
 
@@ -499,8 +525,8 @@ launch_screensaver() {
         log_error "Inner driver not found or not executable: $SCREENSAVER_BIN"
         exit 1
     fi
-    if [[ ! -f "$ALACRITTY_CONFIG" ]]; then
-        log_error "Alacritty screensaver config not found: $ALACRITTY_CONFIG"
+    if [[ ! -f "$TERMINAL_CONFIG" ]]; then
+        log_error "$TERMINAL screensaver config not found: $TERMINAL_CONFIG"
         exit 1
     fi
 
@@ -510,8 +536,8 @@ launch_screensaver() {
     fi
 
     mkdir -p "$CONFIG_DIR"
-    echo $$ > "$PID_FILE"
-    date +%s > "$LAUNCH_STAMP_FILE"
+    echo $$ >"$PID_FILE"
+    date +%s >"$LAUNCH_STAMP_FILE"
 
     # Enumerate outputs once, up front: covers N>2 monitors and avoids racing a
     # hotplug that happens mid-launch. Pin each surface to its output by id so
@@ -534,7 +560,7 @@ launch_screensaver() {
             # One surface refreshes the cell-metrics cache for the next launch.
             measure=()
             if [[ -n "$MEASURE_OUTPUT" && "$output" == "$MEASURE_OUTPUT" ]]; then
-                measure=( --measure-logical "$MEASURE_GEOM" )
+                measure=(--measure-logical "$MEASURE_GEOM")
             fi
             spawn_and_pin "$output" "${measure[@]}"
         done
@@ -583,7 +609,7 @@ show_status() {
     fi
     echo -e "Outputs:    $(count_outputs)"
     echo -e "Multi-mon:  ${MULTI_MONITOR_MODE} (mirror = same effect on every output)"
-    if [[ "$BATTERY_MIN_PERCENT" =~ ^[0-9]+$ ]] && (( BATTERY_MIN_PERCENT > 0 )); then
+    if [[ "$BATTERY_MIN_PERCENT" =~ ^[0-9]+$ ]] && ((BATTERY_MIN_PERCENT > 0)); then
         local cap ac
         cap=$(lowest_battery_capacity)
         on_ac_power && ac="yes" || ac="no"
@@ -596,23 +622,24 @@ show_status() {
 }
 
 usage() {
-    cat << EOF
+    cat <<EOF
 Usage: $(basename "$0") [COMMAND]
 
-Spawn the niri-screensaver in fullscreen Alacritty windows.
+    Spawn the niri-screensaver in fullscreen terminal windows.
 
-Commands:
-    launch [force]   Launch the screensaver (default; 'force' overrides toggle)
-    kill             Stop running screensaver
-    toggle           Toggle screensaver enabled/disabled
-    status           Show status
-    is-running       Exit 0 if the screensaver is running, 1 otherwise (quiet)
-    help             Show this help
 
+    Commands:
+        launch [force]   Launch the screensaver (default; 'force' overrides toggle)
+        kill             Stop running screensaver
+        toggle           Toggle screensaver enabled/disabled
+        status           Show status
+        is-running       Exit 0 if the screensaver is running, 1 otherwise (quiet)
+        help             Show this help
 Environment:
     CONFIG_DIR                          Config directory (default: ~/.config/niri-screensaver)
     NIRI_SCREENSAVER_DATA               Override data dir (alacritty config + logos)
-    ALACRITTY_CONFIG                    Alacritty config file (default: <data>/alacritty-screensaver.toml)
+    TERMINAL                            Terminal emulator (alacritty or ghostty; default: alacritty)
+    TERMINAL_CONFIG                     Alacritty or Ghostty config file (default: <data>/alacritty-screensaver.toml or <data>/ghostty-screensaver.config)
     SCREENSAVER_BIN                     Path to inner driver (default: sibling 'niri-screensaver')
     NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS Drop 'kill' invocations arriving within this many seconds of 'launch'
                                         (default: 3; set to 0 to disable). Works around the Noctalia/niri
@@ -637,20 +664,24 @@ main() {
     shift 2>/dev/null || true
     load_config
     case "$cmd" in
-        launch|run|start) launch_screensaver "$@" ;;
-        kill|stop)
-            if kill_too_soon_after_launch; then
-                log_info "Ignoring kill within ${KILL_DEBOUNCE_SECS}s of launch (spawn/resume race — see issue #4)"
-                exit 0
-            fi
-            kill_screensaver
-            log_success "Screensaver stopped"
-            ;;
-        toggle)           toggle_screensaver ;;
-        status)           show_status ;;
-        is-running)       is_running ;;   # quiet: exit 0 if running, 1 if not
-        help|-h|--help)   usage ;;
-        *) log_error "Unknown command: $cmd"; usage; exit 1 ;;
+    launch | run | start) launch_screensaver "$@" ;;
+    kill | stop)
+        if kill_too_soon_after_launch; then
+            log_info "Ignoring kill within ${KILL_DEBOUNCE_SECS}s of launch (spawn/resume race — see issue #4)"
+            exit 0
+        fi
+        kill_screensaver
+        log_success "Screensaver stopped"
+        ;;
+    toggle) toggle_screensaver ;;
+    status) show_status ;;
+    is-running) is_running ;; # quiet: exit 0 if running, 1 if not
+    help | -h | --help) usage ;;
+    *)
+        log_error "Unknown command: $cmd"
+        usage
+        exit 1
+        ;;
     esac
 }
 
