@@ -12,20 +12,23 @@ PREFIX="${INSTALL_PREFIX:-$HOME/.local}"
 BIN_DIR="${PREFIX}/bin"
 DATA_DIR="${PREFIX}/share/niri-screensaver"
 
-GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 log() { echo -e "${CYAN}[INFO]${NC} $*"; }
-ok()  { echo -e "${GREEN}[OK]${NC} $*"; }
+ok() { echo -e "${GREEN}[OK]${NC} $*"; }
 
 log "Installing to: $PREFIX"
 
 mkdir -p "$BIN_DIR" "$DATA_DIR/logos"
 
-install -m 0755 "$REPO_DIR/bin/niri-screensaver"        "$BIN_DIR/niri-screensaver"
+install -m 0755 "$REPO_DIR/bin/niri-screensaver" "$BIN_DIR/niri-screensaver"
 install -m 0755 "$REPO_DIR/bin/niri-screensaver-launch" "$BIN_DIR/niri-screensaver-launch"
-install -m 0755 "$REPO_DIR/bin/niri-screensaver-ctl"    "$BIN_DIR/niri-screensaver-ctl"
+install -m 0755 "$REPO_DIR/bin/niri-screensaver-ctl" "$BIN_DIR/niri-screensaver-ctl"
 
 install -m 0644 "$REPO_DIR/share/alacritty-screensaver.toml" "$DATA_DIR/"
-install -m 0644 "$REPO_DIR/share/logos/"*.txt               "$DATA_DIR/logos/"
+install -m 0644 "$REPO_DIR/share/ghostty-screensaver.conf" "$DATA_DIR/"
+install -m 0644 "$REPO_DIR/share/logos/"*.txt "$DATA_DIR/logos/"
 
 # Desktop integration (XDG user paths)
 ICON_DIR="${PREFIX}/share/icons/hicolor/scalable/apps"
@@ -47,7 +50,7 @@ ok "Binaries installed to $BIN_DIR"
 ok "Assets installed to $DATA_DIR"
 ok "Desktop entry installed to $APPS_DIR"
 
-cat << EOF
+cat <<EOF
 
 Next steps:
   1. Make sure ~/.local/bin is on your PATH.
