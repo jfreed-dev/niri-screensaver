@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-26
+
+### Changed
+
+- **CI maintenance only; no change to the CLI or the Noctalia plugin.** The
+  `aur-publish`, `aur-publish-git`, `slack-ci-failure` and `slack-daily-digest`
+  workflows now run on the self-hosted `[self-hosted, linux]` runners, matching
+  `ci.yml`. Action pins moved: `crate-ci/typos` v1.47.2 to v1.51.1,
+  `DavidAnson/markdownlint-cli2-action` v23 to v24, and
+  `KSXGitHub/github-actions-deploy-aur` v4.1.3 to v4.2.0.
+
 ## [0.8.0] — 2026-07-22
 
 ### Fixed
