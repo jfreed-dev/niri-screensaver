@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Support of Ghostty as the terminal driver**. TODO Update this with more details
+
 ## [0.8.1] - 2026-10-26
 
 ### Changed

@@ -11,6 +11,17 @@
 
 set -uo pipefail
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info()    { echo -e "${CYAN}[INFO]${NC} $*"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $*"; }
+log_warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
+log_error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/niri-screensaver}"
 CONFIG_FILE="${CONFIG_FILE:-${CONFIG_DIR}/config}"
 PID_FILE="${CONFIG_DIR}/screensaver.pid"
@@ -80,23 +91,37 @@ resolve_data_dir() {
 }
 
 DATA_DIR="$(resolve_data_dir || echo "${SCRIPT_DIR}/../share")"
-ALACRITTY_CONFIG="${ALACRITTY_CONFIG:-${DATA_DIR}/alacritty-screensaver.toml}"
 
 # The inner driver — installed alongside this launcher in the same bin dir.
 SCREENSAVER_BIN="${SCREENSAVER_BIN:-${SCRIPT_DIR}/niri-screensaver}"
 
+# The window class for the terminal
+# This is appended to the terminal command both locally in and with niri
+# and it used as a key for pgrep/pkill etc
 WINDOW_CLASS="niri-screensaver"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+NIRI_SCREENSAVER_TERMINAL="${NIRI_SCREENSAVER_TERMINAL:-alacritty}"
+case $NIRI_SCREENSAVER_TERMINAL in
+    alacritty)
+        if [[ -n "$ALACRITTY_CONFIG" ]]; then
+            log_warn "ALACRITTY_CONFIG is deprecated please update your environment to use NIRI_SCREENSAVER_TERMINAL_CONFIG"
+            log_warn "  ALACRITTY_CONFIG support may be dropped in future revisions"
+            NIRI_SCREENSAVER_TERMINAL_CONFIG="$ALACRITTY_CONFIG"
+        fi
+        NIRI_SCREENSAVER_TERMINAL_CONFIG="${NIRI_SCREENSAVER_TERMINAL_CONFIG:-${DATA_DIR}/alacritty-screensaver.toml}"
+        ;;
+    ghostty)
+        NIRI_SCREENSAVER_TERMINAL_CONFIG="${NIRI_SCREENSAVER_TERMINAL_CONFIG:-${DATA_DIR}/ghostty-screensaver.conf}"
+        WINDOW_CLASS="com.mitchellh.ghostty.${WINDOW_CLASS}"
+        ;;
+    *)
+        log_error "NIRI_SCREENSAVER_TERMINAL:$NIRI_SCREENSAVER_TERMINAL must be alacritty or ghostty"
+        exit 1
+        ;;
+esac
 
-log_info()    { echo -e "${CYAN}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[OK]${NC} $*"; }
-log_warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
-log_error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+PROCESS_CMD=("$NIRI_SCREENSAVER_TERMINAL" "--config-file=${NIRI_SCREENSAVER_TERMINAL_CONFIG}" "--class=${WINDOW_CLASS}")
+PROCESS_REGEX="$NIRI_SCREENSAVER_TERMINAL.*--config-file[ =]${NIRI_SCREENSAVER_TERMINAL_CONFIG}.*--class[ =]${WINDOW_CLASS}"
 
 # Read BATTERY_MIN_PERCENT (and any future launcher-relevant keys) from the
 # shared config file. The Noctalia plugin rewrites every key on each save,
@@ -123,7 +148,7 @@ is_running() {
         fi
         rm -f "$PID_FILE"
     fi
-    pgrep -f "alacritty .*--class[ =]${WINDOW_CLASS}" &>/dev/null
+    pgrep -f "${PROCESS_REGEX}" &>/dev/null
 }
 
 count_outputs() {
@@ -344,15 +369,10 @@ DRIVER_ARGS=()
 spawn_one() {
     local extra=("$@")
     if command -v niri &>/dev/null; then
-        niri msg action spawn -- alacritty \
-            --class "$WINDOW_CLASS" \
-            --config-file "$ALACRITTY_CONFIG" \
+        niri msg action spawn -- "${PROCESS_CMD[@]}" \
             -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" "${extra[@]}"
     else
-        alacritty \
-            --class "$WINDOW_CLASS" \
-            --config-file "$ALACRITTY_CONFIG" \
-            -e "$SCREENSAVER_BIN" run "${DRIVER_ARGS[@]}" "${extra[@]}" &
+        "${PROCESS_CMD[@]}" -e "${SCREENSAVER_BIN}" run "${DRIVER_ARGS[@]}" "${extra[@]}" &
     fi
 }
 
@@ -389,7 +409,7 @@ kill_screensaver() {
     if [[ -f "$PID_FILE" ]]; then
         rm -f "$PID_FILE"
     fi
-    pkill -f "alacritty .*--class[ =]${WINDOW_CLASS}" 2>/dev/null
+    pkill -f "${PROCESS_REGEX}" 2>/dev/null
     pkill -f "$(basename "$SCREENSAVER_BIN") run" 2>/dev/null
     return 0
 }
@@ -499,8 +519,9 @@ launch_screensaver() {
         log_error "Inner driver not found or not executable: $SCREENSAVER_BIN"
         exit 1
     fi
-    if [[ ! -f "$ALACRITTY_CONFIG" ]]; then
-        log_error "Alacritty screensaver config not found: $ALACRITTY_CONFIG"
+    if [[ ! -f "$NIRI_SCREENSAVER_TERMINAL_CONFIG" ]]; then
+        log_error "niri-screensaver terminal config not found: $NIRI_SCREENSAVER_TERMINAL_CONFIG"
+        log_error "   you may need to re-run install.sh"
         exit 1
     fi
 
@@ -589,9 +610,9 @@ show_status() {
         on_ac_power && ac="yes" || ac="no"
         echo -e "Battery:    skip-launch below ${BATTERY_MIN_PERCENT}% (now: ${cap:-n/a}%, on AC: ${ac})"
     fi
-    echo -e "Driver:     $SCREENSAVER_BIN"
-    echo -e "Alacritty:  $ALACRITTY_CONFIG"
-    echo -e "Class:      $WINDOW_CLASS"
+    echo -e "Driver:         $SCREENSAVER_BIN"
+    echo -e "Driver Config:  $NIRI_SCREENSAVER_TERMINAL_CONFIG"
+    echo -e "Class:          $WINDOW_CLASS"
     echo
 }
 
@@ -599,7 +620,7 @@ usage() {
     cat << EOF
 Usage: $(basename "$0") [COMMAND]
 
-Spawn the niri-screensaver in fullscreen Alacritty windows.
+Spawn the niri-screensaver in fullscreen terminal windows.
 
 Commands:
     launch [force]   Launch the screensaver (default; 'force' overrides toggle)
@@ -611,8 +632,10 @@ Commands:
 
 Environment:
     CONFIG_DIR                          Config directory (default: ~/.config/niri-screensaver)
-    NIRI_SCREENSAVER_DATA               Override data dir (alacritty config + logos)
-    ALACRITTY_CONFIG                    Alacritty config file (default: <data>/alacritty-screensaver.toml)
+    NIRI_SCREENSAVER_DATA               Override data dir (niri-screensaver terminal config + logos)
+    NIRI_SCREENSAVER_TERMINAL           Terminal emulator to use (alcritty or ghostty; default alacritty)
+    NIRI_SCREENSAVER_TERMINAL_CONFIG    Terminal emulator config file
+                                        (default: <data>/alacritty-screensaver.toml or <data>/ghostty-screensaver.conf)
     SCREENSAVER_BIN                     Path to inner driver (default: sibling 'niri-screensaver')
     NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS Drop 'kill' invocations arriving within this many seconds of 'launch'
                                         (default: 3; set to 0 to disable). Works around the Noctalia/niri

@@ -25,6 +25,7 @@ install -m 0755 "$REPO_DIR/bin/niri-screensaver-launch" "$BIN_DIR/niri-screensav
 install -m 0755 "$REPO_DIR/bin/niri-screensaver-ctl"    "$BIN_DIR/niri-screensaver-ctl"
 
 install -m 0644 "$REPO_DIR/share/alacritty-screensaver.toml" "$DATA_DIR/"
+install -m 0644 "$REPO_DIR/share/ghostty-screensaver.conf" "$DATA_DIR/"
 install -m 0644 "$REPO_DIR/share/logos/"*.txt               "$DATA_DIR/logos/"
 
 # Desktop integration (XDG user paths)
