@@ -635,7 +635,7 @@ Environment:
     NIRI_SCREENSAVER_DATA               Override data dir (niri-screensaver terminal config + logos)
     NIRI_SCREENSAVER_TERMINAL           Terminal emulator to use (alcritty or ghostty; default alacritty)
     NIRI_SCREENSAVER_TERMINAL_CONFIG    Terminal emulator config file
-                                        (default: <data>/alacritty-screensaver.toml or <data>/ghostty-screensaver.config)
+                                        (default: <data>/alacritty-screensaver.toml or <data>/ghostty-screensaver.conf)
     SCREENSAVER_BIN                     Path to inner driver (default: sibling 'niri-screensaver')
     NIRI_SCREENSAVER_KILL_DEBOUNCE_SECS Drop 'kill' invocations arriving within this many seconds of 'launch'
                                         (default: 3; set to 0 to disable). Works around the Noctalia/niri

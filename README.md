@@ -25,13 +25,15 @@ in swayidle.
 ## Layout
 
 ```text
-  bin/
-    niri-screensaver         Inner driver — runs TTE in the current terminal.
-    niri-screensaver-launch  Spawns one fullscreen terminal (alacritty or ghostty) per output, runs the driver inside.
-    niri-screensaver-ctl     Thin shim: launch | kill | toggle | status | test | preview | effects.
-  share/
-    ghostty-config.config  Minimal Ghostty config (black bg, no padding, exclusive fullscreen).
-    logos/                      ASCII art logos (Framework cog, CachyOS shield, combos). See `Logos` below.
+bin/
+  niri-screensaver         Inner driver — runs TTE in the current terminal.
+  niri-screensaver-launch  Spawns one fullscreen Alacritty per output, runs the driver inside.
+  niri-screensaver-ctl     Thin shim: launch | kill | toggle | status | test | preview | effects.
+share/
+  alacritty-screensaver.toml  Minimal Alacritty config (black bg, no padding, hidden cursor).
+  ghostty-screensaver.conf    Minimal Ghostty config (black bg, no padding, exclusive fullscreen).
+  logos/                      ASCII art logos (Framework cog, CachyOS shield, combos). See `Logos` below.
+docs/
   niri-window-rule.kdl         Snippet for ~/.config/niri/config.kdl.
   noctalia-customCommand.json  Snippet for ~/.config/noctalia/settings.json idle.customCommands.
 noctalia-plugin/                Native Noctalia plugin (manifest + QML).
@@ -74,17 +76,17 @@ Install your choice of terminal:
     # Fedora / RHEL
     sudo dnf install ghostty
    
-    Debian / Ubuntu
+    # Debian / Ubuntu
     sudo apt install ghostty
     ```
 
-Install the other dependencies for your distro:
+Install the remaining dependencies for your distro:
 
 ```bash
 # Arch / CachyOS
 paru -S python-terminaltexteffects niri jq figlet libnotify playerctl
 
-# Fedora / RHEL -- Alacritty
+# Fedora / RHEL
 sudo dnf install niri jq figlet libnotify playerctl
 pipx install terminaltexteffects
 
@@ -123,8 +125,8 @@ other, not both.
 INSTALL_PREFIX=/usr/local ./install.sh   # system-wide
 ```
 
-This deploys the three `bin/` scripts and the `share/` assets (Alacritty
-config + logos + `.desktop` entry + hicolor icon). It does **not**
+This deploys the three `bin/` scripts and the `share/` assets (Terminal
+configs + logos + `.desktop` entry + hicolor icon). It does **not**
 install the niri window-rule or the Noctalia plugin — those are separate
 steps below.
 
@@ -139,7 +141,8 @@ niri-screensaver-ctl test     # render one effect inline (no fullscreen)
 
 Append the contents of `docs/niri-window-rule.kdl` to your `~/.config/niri/config.kdl`.
 The rule matches `app-id="niri-screensaver"` and applies `open-fullscreen true`,
-which is how the launcher achieves fullscreen without an Alacritty CLI flag.
+this is how the launcher achieves fullscreen without
+CLI flags needing to be passed to the terminal emulator.
 
 ## Wire it into Noctalia
 
@@ -413,23 +416,23 @@ attribution adjusted, please open an issue.
   poking) — niri doesn't have the focus-stealing problem.
 - The `ydotool` Super+F injection to toggle fullscreen — replaced by niri
   window-rule with `open-fullscreen true`.
-- Ghostty-specific config generation; now supported alongside Alacritty.
+- Ghostty-specific config generation; now supported alongside a single Alacritty TOML.
 - cosmic-randr monitor enumeration; replaced with `niri msg --json outputs`.
 - `cosmic-greeter --lock`; Noctalia's native lock is invoked via `loginctl
   lock-session` or directly through Noctalia's IdleService.
 - Power-aware effect profiles (UPower D-Bus). Add back via the Noctalia plugin
   if you want them.
 
-## Ghostty
-
-TODO: Update this documentation
+## Ghostty Support
 
 Ghostty is an alternative terminal emulator supported alongside Alacritty. To use it:
 
 ```bash
-export TERMINAL=ghostty
+export NIRI_SCREENSAVER_TERMINAL=ghostty
 niri-screensaver-launch launch
 ```
+
+Note:
 
 ## License
 
